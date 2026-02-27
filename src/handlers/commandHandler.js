@@ -1,4 +1,4 @@
-const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
 const { DEFAULT_CONTENT } = require('../constants/constants');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
@@ -122,11 +122,13 @@ async function handleClosePartyCommand(interaction) {
  * Handles /whitelistadd command
  */
 async function handleWhitelistAddCommand(interaction) {
-
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    if (interaction.user.id !== config.OWNER_ID) {
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+
+    if (!isOwner && !isAdmin) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
@@ -150,11 +152,13 @@ async function handleWhitelistAddCommand(interaction) {
  * Handles /whitelistremove command
  */
 async function handleWhitelistRemoveCommand(interaction) {
-
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    if (interaction.user.id !== config.OWNER_ID) {
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+
+    if (!isOwner && !isAdmin) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 

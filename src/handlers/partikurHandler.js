@@ -13,7 +13,8 @@ async function handleCreatePartyCommand(interaction) {
 
     const lang = guildConfig?.language || 'tr';
     const userId = interaction.user.id;
-    const whitelisted = await isWhitelisted(userId, interaction.guildId);
+    const isOwner = interaction.user.id === interaction.guild.ownerId;
+    const whitelisted = isOwner || await isWhitelisted(userId, interaction.guildId);
     const partyCount = getActivePartyCount(userId);
 
     const limit = whitelisted ? 3 : 1;
