@@ -36,7 +36,7 @@ async function handlePartyButtons(interaction) {
 
         const linkRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setLabel('🌐 Web Sitesi').setStyle(ButtonStyle.Link).setURL('https://example.com'),
-            new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/example')
+            new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
         );
 
         return await interaction.update({ embeds: [newEmbed], components: [row, linkRow] });

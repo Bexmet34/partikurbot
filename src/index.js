@@ -70,9 +70,10 @@ async function startBot() {
 // Client ready event
 client.once('clientReady', async (c) => {
     console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
-    console.log('\x1b[32m%s\x1b[0m', `🚀 ${c.user.tag} Aktif!`);
+    console.log('\x1b[32m%s\x1b[0m', `🚀 ${c.user.tag} Aktif! (${new Date().toLocaleTimeString()})`);
     console.log('\x1b[35m%s\x1b[0m', `🌍 ${c.guilds.cache.size} sunucuda hizmet veriyor.`);
     console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
+
 
     // Set activity safely
     try {
@@ -136,11 +137,9 @@ client.on('interactionCreate', async interaction => {
 
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'yardim') {
-                const { AttachmentBuilder } = require('discord.js');
-                const path = require('path');
-                const pp = new AttachmentBuilder(path.join(process.cwd(), 'assets/images/partibotpp.png'), { name: 'pp.png' });
-                const banner = new AttachmentBuilder(path.join(process.cwd(), 'assets/images/partibotbanner.png'), { name: 'banner.png' });
-                await handleYardimCommand(interaction, [pp, banner]);
+                await handleYardimCommand(interaction);
+
+
 
             } else if (interaction.commandName === 'partikur') {
                 await handlePartikurCommand(interaction);

@@ -85,7 +85,6 @@ function createHelpEmbed(page = 0, guildName = 'Albion') {
         new EmbedBuilder()
             .setTitle(`🛡️ ${guildName} | Yardım Menüsü - Genel`)
             .setColor('#F1C40F')
-            .setThumbnail('attachment://pp.png')
             .setDescription(`**${guildName} Content Bot** sunucunuzdaki etkinlik yönetimini kolaylaştırmak için tasarlanmış profesyonel bir araçtır.\n\n` +
                 `🔹 **Temel Amaç:** Karmaşık rollerle uğraşmadan hızlıca parti formları oluşturmak ve oyuncu istatistiklerini takip etmek.\n\n` +
                 `🔽 Sayfalar arasında geçiş yapmak için aşağıdaki butonları kullanabilirsiniz.`)
@@ -94,14 +93,12 @@ function createHelpEmbed(page = 0, guildName = 'Albion') {
                 { name: '📄 Sayfa 2', value: '🛡️ Yönetim & Limitler', inline: true },
                 { name: '📄 Sayfa 3', value: '🌐 Bağlantılar', inline: true }
             )
-            .setImage('attachment://banner.png')
             .setFooter({ text: 'Sayfa 1/4 • Navigasyon butonlarını kullanın' }),
 
         // Page 1: Komutlar
         new EmbedBuilder()
             .setTitle(`🛡️ ${guildName} | Komut Listesi`)
             .setColor('#3498DB')
-            .setThumbnail('attachment://pp.png')
             .setDescription('Botun sunduğu tüm komutlar ve kullanım amaçları:')
             .addFields(
                 { name: '🏗️ `/partikur`', value: 'Dinamik bir form açar. İçerik, çıkış yeri ve özel rolleri belirlemenizi sağlar.' },
@@ -110,38 +107,35 @@ function createHelpEmbed(page = 0, guildName = 'Albion') {
                 { name: '⚙️ `/ayar`', value: '**(Yetkili)** Sunucu adını ve Albion Lonca ID\'sini sisteme tanımlar.' },
                 { name: 'ℹ️ `/yardim`', value: 'Bu interaktif menüyü açar.' }
             )
-            .setImage('attachment://banner.png')
             .setFooter({ text: 'Sayfa 2/4 • Detaylı komut yardımı' }),
 
         // Page 2: Yönetim & Limitler
         new EmbedBuilder()
             .setTitle(`🛡️ ${guildName} | Yönetim & Limitler`)
             .setColor('#E67E22')
-            .setThumbnail('attachment://pp.png')
             .setDescription('Parti yönetimi ve kısıtlamalar hakkında bilmeniz gerekenler:')
             .addFields(
                 { name: '🚫 Limitler', value: 'Normal kullanıcılar aynı anda **1** aktif parti kurabilir. Beyaz listedeki kullanıcılar **3** parti açabilir.' },
                 { name: '🔑 Whitelist (Beyaz Liste)', value: '`/wladd` ve `/wlremove` komutları ile yetkili kişiler kullanıcılara limit ayrıcalığı verebilir.' },
                 { name: '🧹 Temizlik', value: '`/partikapat` komutu veya embed altındaki "Partiyi Kapat" butonu ile aktif partinizi elle sonlandırabilirsiniz.' }
             )
-            .setImage('attachment://banner.png')
             .setFooter({ text: 'Sayfa 3/4 • Limit ve Kurallar' }),
 
         // Page 3: Bağlantılar & Destek
         new EmbedBuilder()
             .setTitle(`🛡️ ${guildName} | Bağlantılar & Destek`)
             .setColor('#2ECC71')
-            .setThumbnail('attachment://pp.png')
             .setDescription('Bize ulaşabileceğiniz ve bot hakkında daha fazla bilgi alabileceğiniz adresler:')
             .addFields(
                 { name: '🌐 Web Sitesi', value: '`Yakında`', inline: true },
-                { name: '💬 Destek Sunucusu', value: '`Yakında`', inline: true },
+                { name: '💬 Destek Sunucusu', value: '[Katılmak için tıkla](https://discord.gg/RZJE77KEVB)', inline: true },
                 { name: '💎 Geliştirici', value: 'Hakkı', inline: true }
             )
-            .setImage('attachment://banner.png')
             .setTimestamp()
             .setFooter({ text: 'Sayfa 4/4 • İletişim' })
     ];
+
+
 
     return embeds[page] || embeds[0];
 }

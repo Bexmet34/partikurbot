@@ -12,31 +12,26 @@ async function safeReply(interaction, payload) {
     let initiated = false;
 
     try {
-        // 1. Send the response
+        // 1. Send the response and get resource in one go (Modern D.JS v14.14+)
+        let response;
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(options);
+            response = await interaction.followUp({ ...options, withResponse: true });
         } else {
-            await interaction.reply(options);
+            response = await interaction.reply({ ...options, withResponse: true });
         }
 
         initiated = true;
-
-        // 2. Fetch and return the actual message object
-        return await interaction.fetchReply();
+        // withResponse returns an object { resource: Message, ... } or just Message depending on version
+        return response.resource || response;
 
     } catch (error) {
-        const isSsl = error.code === 'ERR_SSL_INVALID_SESSION_ID' ||
-            error.message?.includes('SSL') ||
-            error.message?.includes('session id');
-
-        // If it was initiated but fetchReply failed, try one more fetch before giving up
-        if (initiated || error.code === 40060) {
+        // Handle Aborted error specifically
+        if (error.code === 20 || error.message?.includes('aborted')) {
+            console.log('[SafeReply] Operation aborted, attempting fetchReply fallback...');
             try {
                 return await interaction.fetchReply();
             } catch (e) {
-                // If fetch fails but we know we replied, we can't do much more without risk of dupe
-                // We'll return a mock if it's critical, or just throw
-                if (initiated) throw error;
+                if (interaction.replied || interaction.deferred) return null;
             }
         }
 

@@ -14,7 +14,7 @@ const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig')
 /**
  * Handles /yardim command
  */
-async function handleYardimCommand(interaction, attachments = []) {
+async function handleYardimCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const guildName = guildConfig?.guild_name || 'Albion';
 
@@ -27,13 +27,16 @@ async function handleYardimCommand(interaction, attachments = []) {
         new ButtonBuilder().setCustomId('help_page_3').setLabel('🌐 Bağlantılar').setStyle(ButtonStyle.Secondary)
     );
 
+    // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects
+
     const linkRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel('🌐 Web Sitesi').setStyle(ButtonStyle.Link).setURL('https://example.com'),
-        new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/example')
+        new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
     );
 
-    return await safeReply(interaction, { embeds: [embed], components: [row, linkRow], files: attachments });
+    return await safeReply(interaction, { embeds: [embed], components: [row, linkRow] });
 }
+
 
 
 
