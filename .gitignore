@@ -1,0 +1,39 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.local
+
+# =========================
+# Logs
+# =========================
+*.log
+error.log
+output.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Runtime Data Files
+# =========================
+src/data/*.json
+src/data/*.sqlite
+!src/data/.gitkeep
+
