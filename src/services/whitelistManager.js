@@ -1,75 +1,65 @@
-const fs = require('fs');
-const path = require('path');
-
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const DATA_FILE = path.join(DATA_DIR, 'whitelist.json');
-
-// Ensure data directory and file exist
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-}
+const db = require('./db');
+const config = require('../config/config');
 
 /**
- * Reads the whitelist data from JSON file
+ * Check if user is whitelisted in a specific guild
+ * Always returns true for Bot Owner
+ * @param {string} userId
+ * @param {string} guildId
  */
-function readData() {
-    try {
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('[WhitelistManager] Error reading database:', error.message);
-        return [];
-    }
-}
-
-/**
- * Writes the whitelist data to JSON file
- */
-function writeData(data) {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error('[WhitelistManager] Error writing to database:', error.message);
-    }
-}
-
-/**
- * Check if user is whitelisted
- */
-function isWhitelisted(userId) {
-    const data = readData();
-    return data.includes(userId);
-}
-
-/**
- * Add user to whitelist
- */
-function addToWhitelist(userId) {
-    const data = readData();
-    if (!data.includes(userId)) {
-        data.push(userId);
-        writeData(data);
+async function isWhitelisted(userId, guildId) {
+    // 1. Check if Bot Owner (Global Access)
+    if (config.OWNER_ID && userId === config.OWNER_ID) {
         return true;
     }
-    return false;
+
+    // 2. Check Database for guild specific whitelist
+    try {
+        const row = await db.get(
+            'SELECT 1 FROM guild_whitelist WHERE guild_id = ? AND user_id = ?',
+            [guildId, userId]
+        );
+        return !!row;
+    } catch (error) {
+        console.error('[WhitelistManager] Error checking whitelist:', error.message);
+        return false;
+    }
 }
 
 /**
- * Remove user from whitelist
+ * Add user to guild-specific whitelist
+ * @param {string} userId
+ * @param {string} guildId
  */
-function removeFromWhitelist(userId) {
-    const data = readData();
-    const index = data.indexOf(userId);
-    if (index !== -1) {
-        data.splice(index, 1);
-        writeData(data);
+async function addToWhitelist(userId, guildId) {
+    try {
+        await db.run(
+            'INSERT OR IGNORE INTO guild_whitelist (guild_id, user_id) VALUES (?, ?)',
+            [guildId, userId]
+        );
         return true;
+    } catch (error) {
+        console.error('[WhitelistManager] Error adding to whitelist:', error.message);
+        return false;
     }
-    return false;
+}
+
+/**
+ * Remove user from guild-specific whitelist
+ * @param {string} userId
+ * @param {string} guildId
+ */
+async function removeFromWhitelist(userId, guildId) {
+    try {
+        const result = await db.run(
+            'DELETE FROM guild_whitelist WHERE guild_id = ? AND user_id = ?',
+            [guildId, userId]
+        );
+        return result.changes > 0;
+    } catch (error) {
+        console.error('[WhitelistManager] Error removing from whitelist:', error.message);
+        return false;
+    }
 }
 
 module.exports = {

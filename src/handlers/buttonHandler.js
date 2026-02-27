@@ -19,7 +19,7 @@ async function handlePartyButtons(interaction) {
 
     if (customId.startsWith('close_party_')) {
         const ownerId = customId.split('_')[2];
-        console.log(`[ButtonHandler] Close request from ${interaction.user.tag} for party owned by ${ownerId}`);
+        // console.log(`[ButtonHandler] Close request from ${interaction.user.tag} for party owned by ${ownerId}`);
 
         if (interaction.user.id !== ownerId) {
             return await interaction.reply({
@@ -42,7 +42,8 @@ async function handlePartyButtons(interaction) {
         // Remove from active parties
         removeActiveParty(ownerId, message.id);
 
-        console.log(`[ButtonHandler] ✅ Party ${message.id} closed by owner.`);
+        // console.log(`[ButtonHandler] ✅ Party ${message.id} closed by owner.`);
+
 
         const response = await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
 

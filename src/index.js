@@ -55,9 +55,9 @@ process.on('uncaughtException', error => {
 async function startBot() {
     try {
         await initDb();
-        console.log('[Sistem] Veritabanı hazır.');
         await client.login(config.DISCORD_TOKEN);
-        console.log('[Sistem] Discord bağlantısı kuruldu, hazır olması bekleniyor...');
+
+
     } catch (error) {
         console.error('Bot login error:', error);
         setTimeout(startBot, 5000);
@@ -65,20 +65,21 @@ async function startBot() {
 }
 
 // Client ready event
-client.once('ready', async () => {
-    console.log(`[Bot] ${client.user.tag} tam anlamıyla aktif!`);
+client.once('clientReady', async (c) => {
+    console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
+    console.log('\x1b[32m%s\x1b[0m', `🚀 ${c.user.tag} Aktif!`);
+    console.log('\x1b[35m%s\x1b[0m', `🌍 ${c.guilds.cache.size} sunucuda hizmet veriyor.`);
+    console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
 
-    // Set activity safely with a small delay and error handling
-    setTimeout(() => {
-        try {
-            client.user.setActivity(config.ACTIVITY_TEXT, { type: ActivityType.Listening });
-            console.log(`[Bot] Durum güncellendi: ${config.ACTIVITY_TEXT}`);
-        } catch (err) {
-            console.warn('[Bot] Durum ayarlanırken Shard hatası oluştu, önemsemiyorum.');
-        }
-    }, 2000);
+    // Set activity safely
+    try {
+        client.user.setActivity(config.ACTIVITY_TEXT || '/yardim', { type: ActivityType.Listening });
+    } catch (err) {
+        // Silently fail activity set
+    }
 
     registerCommands(client);
+
 
 
 
@@ -112,8 +113,9 @@ client.on('interactionCreate', async interaction => {
                 await handlePartikapatCommand(interaction);
             } else if (interaction.commandName === 'uyeler') {
                 await handleUyelerCommand(interaction);
-            } else if (interaction.commandName === 'me') {
+            } else if (interaction.commandName === 'player') {
                 await handleMeCommand(interaction);
+
             } else if (interaction.commandName === 'wladd') {
                 await handleWladdCommand(interaction);
             } else if (interaction.commandName === 'wlremove') {

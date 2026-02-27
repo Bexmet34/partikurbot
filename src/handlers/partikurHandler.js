@@ -7,8 +7,9 @@ const { isWhitelisted } = require('../services/whitelistManager');
  */
 async function handlePartikurCommand(interaction) {
     const userId = interaction.user.id;
-    const whitelisted = isWhitelisted(userId);
+    const whitelisted = await isWhitelisted(userId, interaction.guildId);
     const partyCount = getActivePartyCount(userId);
+
     const limit = whitelisted ? 3 : 1;
 
     if (partyCount >= limit) {

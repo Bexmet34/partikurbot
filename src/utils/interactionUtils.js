@@ -20,7 +20,8 @@ async function safeReply(interaction, payload) {
         // 2. Fetch and return the actual message object (for ID and Channel ID)
         // This is the most reliable way in discord.js v14
         const message = await interaction.fetchReply();
-        console.log(`[SafeReply] Message captured: ${message.id}`);
+        // console.log(`[SafeReply] Message captured: ${message.id}`);
+
         return message;
 
     } catch (error) {
@@ -61,10 +62,13 @@ async function handleInteractionError(interaction, error) {
         error.message?.includes('SSL') ||
         error.message?.includes('session id');
 
-    if (isSslError) {
-        console.log(`[InteractionError] SSL Session Error suppressed. Bot continues.`);
+    const isIgnorable = isSslError || error.code === 10062 || error.code === 40060;
+
+    if (isIgnorable) {
+        // console.log(`[InteractionError] Quiet error suppressed (SSL/Unknown Interaction).`);
         return;
     }
+
 
     console.error(`[InteractionError] Real Error: ${error.message} (Code: ${error.code})`);
 

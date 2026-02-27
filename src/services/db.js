@@ -65,7 +65,15 @@ function initDb() {
                 albion_guild_id TEXT,
                 log_channel_id TEXT,
                 setup_completed INTEGER DEFAULT 0
+            )`);
+
+            // Per-guild whitelist for party limit bypass
+            db.run(`CREATE TABLE IF NOT EXISTS guild_whitelist (
+                guild_id TEXT,
+                user_id TEXT,
+                PRIMARY KEY (guild_id, user_id)
             )`, (err) => {
+
 
                 if (err) reject(err);
                 else {

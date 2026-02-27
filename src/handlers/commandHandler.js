@@ -94,9 +94,13 @@ async function handlePartikapatCommand(interaction) {
  * Handles /wladd command
  */
 async function handleWladdCommand(interaction) {
+    if (interaction.user.id !== config.OWNER_ID) {
+        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
+    }
+
     const targetUser = interaction.options.getUser('kullanici');
 
-    if (addToWhitelist(targetUser.id)) {
+    if (await addToWhitelist(targetUser.id, interaction.guildId)) {
         return await safeReply(interaction, {
             content: `✅ **${targetUser.tag}** başarıyla beyaz listeye eklendi. Artık aynı anda **3** parti kurabilir.`,
             flags: [MessageFlags.Ephemeral]
@@ -109,13 +113,18 @@ async function handleWladdCommand(interaction) {
     }
 }
 
+
 /**
  * Handles /wlremove command
  */
 async function handleWlremoveCommand(interaction) {
+    if (interaction.user.id !== config.OWNER_ID) {
+        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
+    }
+
     const targetUser = interaction.options.getUser('kullanici');
 
-    if (removeFromWhitelist(targetUser.id)) {
+    if (await removeFromWhitelist(targetUser.id, interaction.guildId)) {
         return await safeReply(interaction, {
             content: `✅ **${targetUser.tag}** başarıyla beyaz listeden çıkarıldı. Artık sadece **1** parti kurabilir.`,
             flags: [MessageFlags.Ephemeral]
@@ -127,6 +136,7 @@ async function handleWlremoveCommand(interaction) {
         });
     }
 }
+
 
 /**
  * Pagination helper for member list
@@ -195,13 +205,8 @@ async function handleUyelerCommand(interaction) {
  * Handles /me command
  */
 async function handleMeCommand(interaction) {
-    let ign = interaction.options.getString('isim');
+    const ign = interaction.options.getString('isim');
 
-    // Eğer isim girilmediyse, kullanıcının nickname'inden çekmeyi dene (İsim (Gerçek İsim) formatı)
-    if (!ign) {
-        const nickname = interaction.member.nickname || interaction.member.user.globalName || interaction.member.user.username;
-        ign = nickname.split(' ')[0].replace(/[()]/g, '');
-    }
 
     await interaction.deferReply();
 

@@ -17,8 +17,9 @@ async function handlePartiModal(interaction) {
 
 
         const userId = interaction.user.id;
-        const whitelisted = isWhitelisted(userId);
+        const whitelisted = await isWhitelisted(userId, interaction.guildId);
         const partyCount = getActivePartyCount(userId);
+
         const limit = whitelisted ? 3 : 1;
 
         if (partyCount >= limit) {
@@ -84,13 +85,14 @@ async function handlePartiModal(interaction) {
                     );
                 }
 
-                console.log(`[ModalHandler] Registered Log: User ${userId} -> Party ${msgId} (Type: ${type})`);
+                // console.log(`[ModalHandler] Registered Log: User ${userId} -> Party ${msgId} (Type: ${type})`);
             } catch (err) {
                 console.error('[ModalHandler] DB Error:', err.message);
             }
         } else {
-            console.log(`[ModalHandler] ⚠️ Failed to register party in DB (No ID captured).`);
+            // console.log(`[ModalHandler] ⚠️ Failed to register party in DB (No ID captured).`);
         }
+
     }
 }
 

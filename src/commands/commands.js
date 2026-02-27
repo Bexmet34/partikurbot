@@ -16,12 +16,12 @@ const commands = [
 
 
     new SlashCommandBuilder()
-        .setName('me')
-        .setDescription('İstatistiklerinizi veya başka bir oyuncunun istatistiklerini gösterir.')
+        .setName('player')
+        .setDescription('Bir oyuncunun istatistiklerini gösterir.')
         .addStringOption(option =>
             option.setName('isim')
                 .setDescription('İstatistikleri görülecek oyuncunun adı')
-                .setRequired(false)),
+                .setRequired(true)),
     new SlashCommandBuilder()
         .setName('wladd')
         .setDescription('Kullanıcıyı beyaz listeye ekler (Maks 3 parti kurabilir).')
