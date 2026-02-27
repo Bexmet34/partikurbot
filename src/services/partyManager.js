@@ -81,7 +81,8 @@ function setActiveParty(userId, messageId, channelId) {
     }
 
     writeData(data);
-    console.log(`[PartyManager] Database Updated: User ${userId} -> Party ${messageId} in ${channelId}`);
+    // console.log(`[PartyManager] Database Updated: User ${userId} -> Party ${messageId} in ${channelId}`);
+
 }
 
 /**
@@ -125,8 +126,9 @@ function removeActiveParty(userId, messageId = null) {
     }
 
     writeData(data);
-    console.log(`[PartyManager] ✅ Database Updated: User ${userId} party ${messageId} removed.`);
+    // console.log(`[PartyManager] ✅ Database Updated: User ${userId} party ${messageId} removed.`);
     return true;
+
 }
 
 module.exports = {

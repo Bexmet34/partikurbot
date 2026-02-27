@@ -13,6 +13,9 @@ const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { initDb } = require('./services/db');
+const { getGuildConfig } = require('./services/guildConfig');
+const { MessageFlags } = require('discord.js');
+
 
 
 
@@ -104,9 +107,41 @@ client.once('clientReady', async (c) => {
 
 client.on('interactionCreate', async interaction => {
     try {
+        // Sunucu yapılandırma kontrolü
+        if (interaction.guildId) {
+            const guildSettings = await getGuildConfig(interaction.guildId);
+            const isConfigured = guildSettings && guildSettings.guild_name && guildSettings.albion_guild_id;
+
+            // Eğer ayarlar yapılmamışsa ve kullanılan komut /ayar veya /yardim değilse engelle
+            const allowedCommands = ['ayar', 'yardim'];
+            if (!isConfigured && interaction.isChatInputCommand() && !allowedCommands.includes(interaction.commandName)) {
+                return await interaction.reply({
+                    content: '⚠️ **Bot henüz bu sunucu için yapılandırılmamış!**\n\nKomutları kullanabilmek için önce bir yönetici tarafından `/ayar` komutu ile sunucu bilgilerinin (Lonca ismi ve Albion Guild ID) sisteme kaydedilmesi gerekmektedir.',
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+
+            // Buton ve Modal koruması (Yardım butonları hariç)
+            if (!isConfigured && (interaction.isButton() || interaction.isModalSubmit())) {
+                if (interaction.isButton() && interaction.customId.startsWith('help_page_')) {
+                    // Yardım butonlarına izin ver
+                } else {
+                    return await interaction.reply({
+                        content: '⚠️ **Hata:** Sunucu ayarları tamamlanmadan bu işlemi yapamazsınız. Lütfen önce `/ayar` komutunu kullanın.',
+                        flags: [MessageFlags.Ephemeral]
+                    });
+                }
+            }
+        }
+
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'yardim') {
-                await handleYardimCommand(interaction);
+                const { AttachmentBuilder } = require('discord.js');
+                const path = require('path');
+                const pp = new AttachmentBuilder(path.join(process.cwd(), 'assets/images/partibotpp.png'), { name: 'pp.png' });
+                const banner = new AttachmentBuilder(path.join(process.cwd(), 'assets/images/partibotbanner.png'), { name: 'banner.png' });
+                await handleYardimCommand(interaction, [pp, banner]);
+
             } else if (interaction.commandName === 'partikur') {
                 await handlePartikurCommand(interaction);
             } else if (interaction.commandName === 'partikapat') {
@@ -132,6 +167,7 @@ client.on('interactionCreate', async interaction => {
         await handleInteractionError(interaction, error);
     }
 });
+
 
 
 // Start the bot

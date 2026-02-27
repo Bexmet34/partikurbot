@@ -9,6 +9,8 @@ async function safeReply(interaction, payload) {
         allowedMentions: { parse: ['everyone', 'roles', 'users'] }
     };
 
+    let initiated = false;
+
     try {
         // 1. Send the response
         if (interaction.replied || interaction.deferred) {
@@ -17,42 +19,42 @@ async function safeReply(interaction, payload) {
             await interaction.reply(options);
         }
 
-        // 2. Fetch and return the actual message object (for ID and Channel ID)
-        // This is the most reliable way in discord.js v14
-        const message = await interaction.fetchReply();
-        // console.log(`[SafeReply] Message captured: ${message.id}`);
+        initiated = true;
 
-        return message;
+        // 2. Fetch and return the actual message object
+        return await interaction.fetchReply();
 
     } catch (error) {
         const isSsl = error.code === 'ERR_SSL_INVALID_SESSION_ID' ||
             error.message?.includes('SSL') ||
             error.message?.includes('session id');
 
-        if (isSsl) {
-            console.log('[SafeReply] SSL/Transient error, attempting fetchReply fallback...');
+        // If it was initiated but fetchReply failed, try one more fetch before giving up
+        if (initiated || error.code === 40060) {
             try {
-                // If the message was actually sent but errored during return
                 return await interaction.fetchReply();
             } catch (e) {
-                console.log('[SafeReply] fetchReply fallback failed, trying channel.send...');
+                // If fetch fails but we know we replied, we can't do much more without risk of dupe
+                // We'll return a mock if it's critical, or just throw
+                if (initiated) throw error;
             }
         }
 
-        // Final fallback: channel.send
-        if (interaction.channel) {
+        // Final fallback: channel.send ONLY if we haven't initiated a reply yet
+        if (!initiated && interaction.channel) {
             try {
                 const legacyMsg = await interaction.channel.send(options);
-                console.log('[SafeReply] Fallback successful via channel.send');
+                // console.log('[SafeReply] Fallback successful via channel.send');
                 return legacyMsg;
             } catch (sendError) {
-                console.error('[SafeReply] All delivery methods failed.');
+                // console.error('[SafeReply] All delivery methods failed.');
             }
         }
 
         throw error;
     }
 }
+
 
 /**
  * Handles interaction errors - Suppresses transient SSL warnings

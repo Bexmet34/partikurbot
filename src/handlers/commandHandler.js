@@ -14,11 +14,29 @@ const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig')
 /**
  * Handles /yardim command
  */
-async function handleYardimCommand(interaction) {
+async function handleYardimCommand(interaction, attachments = []) {
     const guildConfig = await getGuildConfig(interaction.guildId);
-    const helpEmbed = createHelpEmbed(guildConfig?.guild_name);
-    return await safeReply(interaction, { embeds: [helpEmbed], flags: [MessageFlags.Ephemeral] });
+    const guildName = guildConfig?.guild_name || 'Albion';
+
+    const embed = createHelpEmbed(0, guildName);
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('help_page_1').setLabel('📊 Komutlar').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_page_2').setLabel('🛡️ Yönetim').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_page_3').setLabel('🌐 Bağlantılar').setStyle(ButtonStyle.Secondary)
+    );
+
+    const linkRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setLabel('🌐 Web Sitesi').setStyle(ButtonStyle.Link).setURL('https://example.com'),
+        new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/example')
+    );
+
+    return await safeReply(interaction, { embeds: [embed], components: [row, linkRow], files: attachments });
 }
+
+
+
 
 
 
@@ -74,7 +92,7 @@ async function handlePartikapatCommand(interaction) {
         }
 
         const responseContent = totalClosed > 0
-            ? `✅ **Toplam ${totalClosed} aktif partiniz başarıyla kapatıldı.**\n\n⚠️ **ÖNEMLİ:** Katılımcıları onaylamak ve prestij puanlarını dağıtmak için aşağıdaki listeye göz atın.`
+            ? `✅ **Toplam ${totalClosed} aktif partiniz başarıyla kapatıldı.**`
             : '✅ **Aktif partileriniz sistemden temizlendi.**';
 
         await interaction.editReply({ content: responseContent }).catch(() => { });

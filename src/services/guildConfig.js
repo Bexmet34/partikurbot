@@ -6,14 +6,8 @@ const db = require('./db');
 async function getGuildConfig(guildId) {
     try {
         const row = await db.get('SELECT * FROM guild_configs WHERE guild_id = ?', [guildId]);
-        if (!row) {
-            return {
-                guild_name: 'Albion Loncası',
-                albion_guild_id: 'y76J2p2cR-mI0k5P1N9M8w', // Varsayılan örnek
-                setup_completed: 0
-            };
-        }
-        return row;
+        return row || null;
+
     } catch (error) {
         console.error(`[GuildConfig] Error fetching for ${guildId}:`, error);
         return null;

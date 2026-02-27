@@ -75,21 +75,77 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
 }
 
 /**
- * Creates a help embed
+ * Creates a paginated help embed
+ * @param {number} page Page index (0-3)
+ * @param {string} guildName Name of the guild
  */
-function createHelpEmbed(guildName = 'Albion') {
-    return new EmbedBuilder()
-        .setTitle(`🛡️ ${guildName} Content Bot Yardım Menüsü`)
+function createHelpEmbed(page = 0, guildName = 'Albion') {
+    const embeds = [
+        // Page 0: Genel Bakış
+        new EmbedBuilder()
+            .setTitle(`🛡️ ${guildName} | Yardım Menüsü - Genel`)
+            .setColor('#F1C40F')
+            .setThumbnail('attachment://pp.png')
+            .setDescription(`**${guildName} Content Bot** sunucunuzdaki etkinlik yönetimini kolaylaştırmak için tasarlanmış profesyonel bir araçtır.\n\n` +
+                `🔹 **Temel Amaç:** Karmaşık rollerle uğraşmadan hızlıca parti formları oluşturmak ve oyuncu istatistiklerini takip etmek.\n\n` +
+                `🔽 Sayfalar arasında geçiş yapmak için aşağıdaki butonları kullanabilirsiniz.`)
+            .addFields(
+                { name: '📄 Sayfa 1', value: '📊 Komut Listesi', inline: true },
+                { name: '📄 Sayfa 2', value: '🛡️ Yönetim & Limitler', inline: true },
+                { name: '📄 Sayfa 3', value: '🌐 Bağlantılar', inline: true }
+            )
+            .setImage('attachment://banner.png')
+            .setFooter({ text: 'Sayfa 1/4 • Navigasyon butonlarını kullanın' }),
 
+        // Page 1: Komutlar
+        new EmbedBuilder()
+            .setTitle(`🛡️ ${guildName} | Komut Listesi`)
+            .setColor('#3498DB')
+            .setThumbnail('attachment://pp.png')
+            .setDescription('Botun sunduğu tüm komutlar ve kullanım amaçları:')
+            .addFields(
+                { name: '🏗️ `/partikur`', value: 'Dinamik bir form açar. İçerik, çıkış yeri ve özel rolleri belirlemenizi sağlar.' },
+                { name: '🔍 `/player [isim]`', value: 'Bir oyuncunun Albion Online (Europe) istatistiklerini döküm halinde getirir.' },
+                { name: '👥 `/uyeler`', value: 'Loncanızdaki aktif üyeleri sayfa sayfa listeler.' },
+                { name: '⚙️ `/ayar`', value: '**(Yetkili)** Sunucu adını ve Albion Lonca ID\'sini sisteme tanımlar.' },
+                { name: 'ℹ️ `/yardim`', value: 'Bu interaktif menüyü açar.' }
+            )
+            .setImage('attachment://banner.png')
+            .setFooter({ text: 'Sayfa 2/4 • Detaylı komut yardımı' }),
 
-        .setColor('#F1C40F')
-        .setDescription('Discord sunucunuz için gelişmiş parti kurma ve yönetim botu.')
-        .addFields(
-            { name: '🏗️ /partikur', value: 'Özel roller belirleyebileceğiniz parti formu açar.', inline: false },
-            { name: 'ℹ️ /yardim', value: 'Bu menüyü görüntüler.', inline: false },
-            { name: '💎 Geliştirici', value: '```ansi\n\u001b[31mHakkı\u001b[0m\n```', inline: false }
-        );
+        // Page 2: Yönetim & Limitler
+        new EmbedBuilder()
+            .setTitle(`🛡️ ${guildName} | Yönetim & Limitler`)
+            .setColor('#E67E22')
+            .setThumbnail('attachment://pp.png')
+            .setDescription('Parti yönetimi ve kısıtlamalar hakkında bilmeniz gerekenler:')
+            .addFields(
+                { name: '🚫 Limitler', value: 'Normal kullanıcılar aynı anda **1** aktif parti kurabilir. Beyaz listedeki kullanıcılar **3** parti açabilir.' },
+                { name: '🔑 Whitelist (Beyaz Liste)', value: '`/wladd` ve `/wlremove` komutları ile yetkili kişiler kullanıcılara limit ayrıcalığı verebilir.' },
+                { name: '🧹 Temizlik', value: '`/partikapat` komutu veya embed altındaki "Partiyi Kapat" butonu ile aktif partinizi elle sonlandırabilirsiniz.' }
+            )
+            .setImage('attachment://banner.png')
+            .setFooter({ text: 'Sayfa 3/4 • Limit ve Kurallar' }),
+
+        // Page 3: Bağlantılar & Destek
+        new EmbedBuilder()
+            .setTitle(`🛡️ ${guildName} | Bağlantılar & Destek`)
+            .setColor('#2ECC71')
+            .setThumbnail('attachment://pp.png')
+            .setDescription('Bize ulaşabileceğiniz ve bot hakkında daha fazla bilgi alabileceğiniz adresler:')
+            .addFields(
+                { name: '🌐 Web Sitesi', value: '`Yakında`', inline: true },
+                { name: '💬 Destek Sunucusu', value: '`Yakında`', inline: true },
+                { name: '💎 Geliştirici', value: 'Hakkı', inline: true }
+            )
+            .setImage('attachment://banner.png')
+            .setTimestamp()
+            .setFooter({ text: 'Sayfa 4/4 • İletişim' })
+    ];
+
+    return embeds[page] || embeds[0];
 }
+
 
 module.exports = {
     createEmbed,
@@ -97,3 +153,4 @@ module.exports = {
     createHelpEmbed,
     createProgressBar
 };
+
