@@ -1,30 +1,26 @@
 const { EmbedBuilder } = require('discord.js');
 const { NOTLAR_METNI, ROLE_ICONS } = require('../constants/constants');
 const config = require('../config/config');
+const { t } = require('../services/i18n');
+const { createProgressBar } = require('../utils/generalUtils');
 
 
 /**
  * Creates a PVE embed
  */
-/**
- * Creates a PVE embed
- */
-function createEmbed(title, details, content, roles, isClosed = false, guildName = 'Albion') {
-    const cleanTitle = title.replace(new RegExp(`^🛡️ ${guildName} \\| `), '').replace(/ \[KAPALI\]$/, '');
-
+function createEmbed(title, details, content, roles, isClosed = false, guildName = 'Albion', lang = 'tr') {
+    const cleanTitle = title.replace(new RegExp(`^🛡️ ${guildName} \\| `), '').replace(/ \[.*?\]$/, '');
 
     // Build description with better formatting
-    let description = `📋 **Detaylar:**\n${details}\n\n`;
-    description += `🎯 **İçerik:**\n${content}`;
+    let description = `📋 **${t('common.details', lang)}:**\n${details}\n\n`;
+    description += `🎯 **${t('common.content', lang)}:**\n${content}`;
 
     const embed = new EmbedBuilder()
-        .setTitle(`🛡️ ${guildName} | ${cleanTitle}${isClosed ? ' [KAPALI]' : ''}`)
-
-
+        .setTitle(`🛡️ ${guildName} | ${cleanTitle}${isClosed ? ` [${t('common.closed', lang)}]` : ''}`)
         .setDescription(description)
         .setColor(isClosed ? '#808080' : '#F1C40F')
         .addFields(
-            { name: '👥 **PARTİ KADROSU**', value: '\u200b', inline: false },
+            { name: `👥 **${t('common.party_roster', lang)}**`, value: '\u200b', inline: false },
             {
                 name: `${roles.tank === '-' ? '🟡' : '🔴'} 1. Tank:`,
                 value: roles.tank,
@@ -46,94 +42,90 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
         // Calculate counts for progress bar
         const total = 2 + roles.dps.length;
         const filled = [roles.tank, roles.heal, ...roles.dps].filter(v => v !== '-').length;
-        embed.setFooter({ text: `Doluluk: ${createProgressBar(filled, total)}` });
+        embed.setFooter({ text: `${t('common.fullness', lang)}: ${createProgressBar(filled, total)}` });
     }
 
     return embed;
 }
 
-const { createProgressBar } = require('../utils/generalUtils');
-
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion') {
-    let desc = `📍 **Çıkış Yeri:** ${content}`;
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr') {
+    let desc = `📍 **${t('party.location', lang)}:** ${content}`;
     if (description) {
-        desc += `\n\n📝 **Parti Notları:**\n${description}`;
+        desc += `\n\n📝 **${t('party.notes', lang)}:**\n${description}`;
     }
 
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} | ${header}`)
-
-
         .setDescription(desc)
         .setColor('#F1C40F')
-        .setFooter({ text: `Doluluk: ${createProgressBar(currentCount, rolesList.length)}` });
+        .setFooter({ text: `${t('common.fullness', lang)}: ${createProgressBar(currentCount, rolesList.length)}` });
 
     return embed;
 }
 
 /**
  * Creates a paginated help embed
- * @param {number} page Page index (0-3)
- * @param {string} guildName Name of the guild
  */
-function createHelpEmbed(page = 0, guildName = 'Albion') {
+function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
     const embeds = [
-        // Page 0: Genel Bakış
+        // Page 0: Overview
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | Yardım Menüsü - Genel`)
+            .setTitle(`🛡️ ${guildName} | ${t('help.title_general', lang)}`)
             .setColor('#F1C40F')
-            .setDescription(`**${guildName} Content Bot** sunucunuzdaki etkinlik yönetimini kolaylaştırmak için tasarlanmış profesyonel bir araçtır.\n\n` +
-                `🔹 **Temel Amaç:** Karmaşık rollerle uğraşmadan hızlıca parti formları oluşturmak ve oyuncu istatistiklerini takip etmek.\n\n` +
-                `🔽 Sayfalar arasında geçiş yapmak için aşağıdaki butonları kullanabilirsiniz.`)
+            .setDescription(`**${guildName} Content Bot** ${t('help.desc_general', lang)}\n\n` +
+                `🔹 **${t('common.details', lang)}:** ${t('help.desc_goal', lang)}\n\n` +
+                `🔽 ${t('help.desc_nav', lang)}`)
             .addFields(
-                { name: '📄 Sayfa 1', value: '📊 Komut Listesi', inline: true },
-                { name: '📄 Sayfa 2', value: '🛡️ Yönetim & Limitler', inline: true },
-                { name: '📄 Sayfa 3', value: '🌐 Bağlantılar', inline: true }
+                { name: `📄 ${t('common.page', lang)} 1`, value: `📊 ${t('help.page_1', lang)}`, inline: true },
+                { name: `📄 ${t('common.page', lang)} 2`, value: `🛡️ ${t('help.page_2', lang)}`, inline: true },
+                { name: `📄 ${t('common.page', lang)} 3`, value: `🌐 ${t('help.page_3', lang)}`, inline: true }
             )
-            .setFooter({ text: 'Sayfa 1/4 • Navigasyon butonlarını kullanın' }),
+            .setFooter({ text: `${t('common.page', lang)} 1/4 • ${t('help.footer_nav', lang)}` }),
 
-        // Page 1: Komutlar
+        // Page 1: Commands
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | Komut Listesi`)
+            .setTitle(`🛡️ ${guildName} | ${t('help.title_commands', lang)}`)
             .setColor('#3498DB')
-            .setDescription('Botun sunduğu tüm komutlar ve kullanım amaçları:')
+            .setDescription(`${t('help.title_commands', lang)}:`)
             .addFields(
-                { name: '🏗️ `/partikur`', value: 'Dinamik bir form açar. İçerik, çıkış yeri ve özel rolleri belirlemenizi sağlar.' },
-                { name: '🔍 `/player [isim]`', value: 'Bir oyuncunun Albion Online (Europe) istatistiklerini döküm halinde getirir.' },
-                { name: '👥 `/uyeler`', value: 'Loncanızdaki aktif üyeleri sayfa sayfa listeler.' },
-                { name: '⚙️ `/ayar`', value: '**(Yetkili)** Sunucu adını ve Albion Lonca ID\'sini sisteme tanımlar.' },
-                { name: 'ℹ️ `/yardim`', value: 'Bu interaktif menüyü açar.' }
+                { name: '🏗️ `/createparty`', value: t('help.cmd_createparty', lang) },
+                { name: '🔍 `/stats [name]`', value: t('help.cmd_stats', lang) },
+                { name: '👥 `/members`', value: t('help.cmd_members', lang) },
+                { name: '⚙️ `/settings`', value: t('help.cmd_settings', lang) },
+                { name: 'ℹ️ `/help`', value: t('help.cmd_help', lang) }
             )
-            .setFooter({ text: 'Sayfa 2/4 • Detaylı komut yardımı' }),
+            .setFooter({ text: `${t('common.page', lang)} 2/4 • ${t('help.footer_commands', lang)}` }),
 
-        // Page 2: Yönetim & Limitler
+        // Page 2: Management & Limits
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | Yönetim & Limitler`)
+            .setTitle(`🛡️ ${guildName} | ${t('help.title_management', lang)}`)
             .setColor('#E67E22')
-            .setDescription('Parti yönetimi ve kısıtlamalar hakkında bilmeniz gerekenler:')
+            .setDescription(`${t('help.title_management', lang)}:`)
             .addFields(
-                { name: '🚫 Limitler', value: 'Normal kullanıcılar aynı anda **1** aktif parti kurabilir. Beyaz listedeki kullanıcılar **3** parti açabilir.' },
-                { name: '🔑 Whitelist (Beyaz Liste)', value: '`/wladd` ve `/wlremove` komutları ile yetkili kişiler kullanıcılara limit ayrıcalığı verebilir.' },
-                { name: '🧹 Temizlik', value: '`/partikapat` komutu veya embed altındaki "Partiyi Kapat" butonu ile aktif partinizi elle sonlandırabilirsiniz.' }
+                { name: `🚫 ${t('help.mgmt_limits_title', lang)}`, value: t('help.mgmt_limits_desc', lang) },
+                { name: `🔑 ${t('help.mgmt_whitelist_title', lang)}`, value: t('help.mgmt_whitelist_desc', lang) },
+                { name: `🧹 ${t('help.mgmt_cleanup_title', lang)}`, value: t('help.mgmt_cleanup_desc', lang) }
             )
-            .setFooter({ text: 'Sayfa 3/4 • Limit ve Kurallar' }),
+            .setFooter({ text: `${t('common.page', lang)} 3/4 • ${t('help.footer_limits', lang)}` }),
 
-        // Page 3: Bağlantılar & Destek
+        // Page 3: Links & Support
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | Bağlantılar & Destek`)
+            .setTitle(`🛡️ ${guildName} | ${t('help.title_links', lang)}`)
             .setColor('#2ECC71')
-            .setDescription('Bize ulaşabileceğiniz ve bot hakkında daha fazla bilgi alabileceğiniz adresler:')
+            .setDescription(`${t('help.title_links', lang)}:`)
             .addFields(
-                { name: '🌐 Web Sitesi', value: '`Yakında`', inline: true },
-                { name: '💬 Destek Sunucusu', value: '[Katılmak için tıkla](https://discord.gg/RZJE77KEVB)', inline: true },
-                { name: '💎 Geliştirici', value: 'Hakkı', inline: true }
+                { name: '🌐 Web Site', value: '[veyronixbot.vercel.app](https://veyronixbot.vercel.app/)', inline: true },
+                { name: `💬 ${t('help.support_server', lang)}`, value: `[${t('settings.success', lang).includes('successfully') ? 'Join here' : 'Katılmak için tıkla'}](https://discord.gg/RZJE77KEVB)`, inline: true },
+
+                { name: '💎 Developer', value: 'Hakkı', inline: true }
             )
             .setTimestamp()
-            .setFooter({ text: 'Sayfa 4/4 • İletişim' })
+            .setFooter({ text: `${t('common.page', lang)} 4/4 • ${t('help.footer_contact', lang)}` })
     ];
+
 
 
 

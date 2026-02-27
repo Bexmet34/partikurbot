@@ -51,10 +51,12 @@ async function safeReply(interaction, payload) {
 }
 
 
+const { t } = require('../services/i18n');
+
 /**
  * Handles interaction errors - Suppresses transient SSL warnings
  */
-async function handleInteractionError(interaction, error) {
+async function handleInteractionError(interaction, error, lang = 'tr') {
     const isSslError = error.code === 'ERR_SSL_INVALID_SESSION_ID' ||
         error.message?.includes('SSL') ||
         error.message?.includes('session id');
@@ -62,21 +64,19 @@ async function handleInteractionError(interaction, error) {
     const isIgnorable = isSslError || error.code === 10062 || error.code === 40060;
 
     if (isIgnorable) {
-        // console.log(`[InteractionError] Quiet error suppressed (SSL/Unknown Interaction).`);
         return;
     }
 
-
     console.error(`[InteractionError] Real Error: ${error.message} (Code: ${error.code})`);
 
-    let errorMessage = error.message || 'Bilinmeyen bir hata';
+    let errorMessage = error.message || t('common.error', lang);
     if (error.code === 50013) {
-        errorMessage = "Botun bu işlemi yapmak için yetkisi yok (Yetki Hatası).";
+        errorMessage = lang === 'en' ? 'Bot lack permissions for this action.' : 'Botun bu işlemi yapmak için yetkisi yok (Yetki Hatası).';
     }
 
-    const responseContent = `❌ **Bu komutu çalıştırırken bir hata oluştu!**\n` +
-        `**Hata Özeti:** ${errorMessage}\n\n` +
-        `**✅ Çözüm:** Botun sunucudaki rolüne **'Mesaj Gönder'**, **'Link Yerleştir'** ve özellikle **'Herkesten Bahset' (@everyone)** yetkilerini verin.`;
+    const responseContent = `❌ **${t('party.error', lang) || t('common.error', lang)}**\n` +
+        `**Summary:** ${errorMessage}\n\n` +
+        `**✅ Solution:** Check bot permissions for **'Send Messages'**, **'Embed Links'**, and **'Mention @everyone'**.`;
 
     try {
         const errorOptions = { content: responseContent, flags: [MessageFlags.Ephemeral] };
@@ -87,6 +87,7 @@ async function handleInteractionError(interaction, error) {
         }
     } catch (err) { }
 }
+
 
 module.exports = {
     safeReply,

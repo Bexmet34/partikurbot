@@ -1,11 +1,17 @@
 const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder } = require('discord.js');
 const { getActivePartyCount } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
+const { getGuildConfig } = require('../services/guildConfig');
+const { t } = require('../services/i18n');
+
+
 /**
- * Handles /partikur command
- * Shows modal directly without duration selection
+ * Handles /createparty command
  */
-async function handlePartikurCommand(interaction) {
+async function handleCreatePartyCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+
+    const lang = guildConfig?.language || 'tr';
     const userId = interaction.user.id;
     const whitelisted = await isWhitelisted(userId, interaction.guildId);
     const partyCount = getActivePartyCount(userId);
@@ -14,8 +20,8 @@ async function handlePartikurCommand(interaction) {
 
     if (partyCount >= limit) {
         let errorMsg = whitelisted
-            ? `❌ **Limitinize ulaştınız!**\n\nWhite list üyesi olarak en fazla **3** aktif parti açabilirsiniz. Yeni bir parti açmadan önce mevcut partilerinizden birini kapatmalısınız.`
-            : `❌ **Zaten aktif bir partiniz var!**\n\nYeni bir parti açmadan önce mevcut partinizi kapatmalısınız. Kapatmak için:\n1️⃣ Mevcut partideki **"Partiyi Kapat"** butonuna basabilir,\n2️⃣ Veya \`/partikapat\` komutunu kullanabilirsiniz.`;
+            ? `❌ **${t('party.limit_reached', lang)}**\n\n${t('party.limit_desc_whitelisted', lang)}`
+            : `❌ **${t('party.already_active', lang)}**\n\n${t('party.limit_desc_normal', lang)}`;
 
         return await interaction.reply({
             content: errorMsg,
@@ -24,34 +30,34 @@ async function handlePartikurCommand(interaction) {
     }
 
     const modal = new ModalBuilder()
-        .setCustomId('parti_modal:genel') // Default to 'genel' or something neutral
-        .setTitle('Parti Oluştur');
+        .setCustomId('parti_modal:genel')
+        .setTitle(t('party.create_party_title', lang));
 
     const headerInput = new TextInputBuilder()
         .setCustomId('party_header')
-        .setLabel('Parti Başlığı')
-        .setPlaceholder('Başlığı giriniz')
+        .setLabel(t('party.party_header_label', lang))
+        .setPlaceholder(t('party.party_header_placeholder', lang))
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
     const contentInput = new TextInputBuilder()
         .setCustomId('party_content')
-        .setLabel('İçerik Başlangıç Yeri')
-        .setPlaceholder('Örn: Berylo, Lymhurst, Fort Sterling...')
+        .setLabel(t('party.party_content_label', lang))
+        .setPlaceholder(t('party.party_content_placeholder', lang))
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
     const rolesInput = new TextInputBuilder()
         .setCustomId('party_roles')
-        .setLabel('Roller')
-        .setPlaceholder('Tank\nHeal\nDPS\n(Her satıra bir rol)')
+        .setLabel(t('party.party_roles_label', lang))
+        .setPlaceholder(t('party.party_roles_placeholder', lang))
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
     const descriptionInput = new TextInputBuilder()
         .setCustomId('party_description')
-        .setLabel('Parti Açıklaması / Notlar')
-        .setPlaceholder('Örn: T6-7 ayar. Kalite 4 ve üzeri haritalara gidicez.')
+        .setLabel(t('party.party_desc_label', lang))
+        .setPlaceholder(t('party.party_desc_placeholder', lang))
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false);
 
@@ -65,6 +71,7 @@ async function handlePartikurCommand(interaction) {
     await interaction.showModal(modal);
 }
 
+
 // Deprecated func kept for safety, but unused
 async function handleDurationButton(interaction) {
     return false;
@@ -72,5 +79,6 @@ async function handleDurationButton(interaction) {
 
 module.exports = {
     handleDurationButton,
-    handlePartikurCommand
+    handleCreatePartyCommand
 };
+

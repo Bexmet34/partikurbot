@@ -9,30 +9,34 @@ const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
 const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig');
+const { t } = require('../services/i18n');
 
 
 /**
- * Handles /yardim command
+ * Handles /help command
  */
-async function handleYardimCommand(interaction) {
+async function handleHelpCommand(interaction) {
+
     const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
     const guildName = guildConfig?.guild_name || 'Albion';
 
-    const embed = createHelpEmbed(0, guildName);
+    const embed = createHelpEmbed(0, guildName, lang);
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId('help_page_1').setLabel('📊 Komutlar').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('help_page_2').setLabel('🛡️ Yönetim').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('help_page_3').setLabel('🌐 Bağlantılar').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('help_page_1').setLabel(`📊 ${t('help.page_1', lang)}`).setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_page_2').setLabel(`🛡️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_page_3').setLabel(`🌐 ${t('help.page_3', lang)}`).setStyle(ButtonStyle.Secondary)
     );
 
     // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects
 
     const linkRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel('🌐 Web Sitesi').setStyle(ButtonStyle.Link).setURL('https://example.com'),
-        new ButtonBuilder().setLabel('💬 Destek Sunucusu').setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
+        new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
+        new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
     );
+
 
     return await safeReply(interaction, { embeds: [embed], components: [row, linkRow] });
 }
@@ -44,18 +48,21 @@ async function handleYardimCommand(interaction) {
 
 
 /**
- * Handles /partikapat command
+ * Handles /closeparty command
  */
-async function handlePartikapatCommand(interaction) {
+async function handleClosePartyCommand(interaction) {
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
     const userId = interaction.user.id;
-    console.log(`[CommandHandler] /partikapat triggered by ${interaction.user.tag}`);
+    console.log(`[CommandHandler] /closeparty triggered by ${interaction.user.tag}`);
 
     try {
         const parties = getActiveParties(userId);
 
         if (!parties || parties.length === 0) {
             return await safeReply(interaction, {
-                content: '❌ **Aktif bir partiniz bulunmuyor.**',
+                content: `❌ **${t('common.no_party', lang)}**`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
@@ -76,13 +83,13 @@ async function handlePartikapatCommand(interaction) {
                         const oldEmbed = message.embeds[0];
                         const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
                         const closedEmbed = EmbedBuilder.from(oldEmbed)
-                            .setTitle(`${oldEmbed.title} [KAPALI]`)
+                            .setTitle(`${oldEmbed.title} [${t('common.closed', lang)}]`)
                             .setColor('#808080')
                             .setFields(newFields)
                             .setFooter(null)
                             .setTimestamp(null);
 
-                        const closedRow = createClosedButton();
+                        const closedRow = createClosedButton(lang);
                         await message.edit({ embeds: [closedEmbed], components: [closedRow] });
                         totalClosed++;
                     }
@@ -95,8 +102,8 @@ async function handlePartikapatCommand(interaction) {
         }
 
         const responseContent = totalClosed > 0
-            ? `✅ **Toplam ${totalClosed} aktif partiniz başarıyla kapatıldı.**`
-            : '✅ **Aktif partileriniz sistemden temizlendi.**';
+            ? `✅ **${t('party.closed_success', lang, { count: totalClosed })}**`
+            : `✅ **${t('party.cleared_success', lang)}**`;
 
         await interaction.editReply({ content: responseContent }).catch(() => { });
 
@@ -107,28 +114,32 @@ async function handlePartikapatCommand(interaction) {
         const parties = getActiveParties(userId);
         parties.forEach(p => removeActiveParty(userId, p.messageId));
 
-        await interaction.followUp({ content: '❌ Bir hata oluştu ama kilitleriniz temizlendi.', flags: [MessageFlags.Ephemeral] }).catch(() => { });
+        await interaction.followUp({ content: `❌ ${t('common.error', lang)}`, flags: [MessageFlags.Ephemeral] }).catch(() => { });
     }
 }
 
 /**
- * Handles /wladd command
+ * Handles /whitelistadd command
  */
-async function handleWladdCommand(interaction) {
+async function handleWhitelistAddCommand(interaction) {
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
     if (interaction.user.id !== config.OWNER_ID) {
-        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
-    const targetUser = interaction.options.getUser('kullanici');
+    const targetUser = interaction.options.getUser('user');
 
     if (await addToWhitelist(targetUser.id, interaction.guildId)) {
         return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** başarıyla beyaz listeye eklendi. Artık aynı anda **3** parti kurabilir.`,
+            content: `✅ **${targetUser.tag}** ${t('whitelist.added', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
     } else {
         return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** zaten beyaz listede bulunuyor.`,
+            content: `❌ **${targetUser.tag}** ${t('whitelist.already_in', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
     }
@@ -136,23 +147,27 @@ async function handleWladdCommand(interaction) {
 
 
 /**
- * Handles /wlremove command
+ * Handles /whitelistremove command
  */
-async function handleWlremoveCommand(interaction) {
+async function handleWhitelistRemoveCommand(interaction) {
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
     if (interaction.user.id !== config.OWNER_ID) {
-        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
-    const targetUser = interaction.options.getUser('kullanici');
+    const targetUser = interaction.options.getUser('user');
 
     if (await removeFromWhitelist(targetUser.id, interaction.guildId)) {
         return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** başarıyla beyaz listeden çıkarıldı. Artık sadece **1** parti kurabilir.`,
+            content: `✅ **${targetUser.tag}** ${t('whitelist.removed', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
     } else {
         return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** beyaz listede bulunamadı.`,
+            content: `❌ **${targetUser.tag}** ${t('whitelist.not_found', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
     }
@@ -162,7 +177,7 @@ async function handleWlremoveCommand(interaction) {
 /**
  * Pagination helper for member list
  */
-function createMemberPageEmbed(members, page = 0) {
+function createMemberPageEmbed(members, page = 0, guildName = 'Albion', lang = 'tr') {
     const pageSize = 20;
     const start = page * pageSize;
     const end = start + pageSize;
@@ -170,46 +185,46 @@ function createMemberPageEmbed(members, page = 0) {
     const totalPages = Math.ceil(members.length / pageSize);
 
     const embed = new EmbedBuilder()
-        .setTitle(`🛡️ ${config.GUILD_NAME} Lonca Üyeleri`)
+        .setTitle(`🛡️ ${guildName} ${t('members.guild_members', lang)}`)
         .setColor('#2ECC71')
 
-        .setDescription(`**Toplam Üye:** ${members.length}\n**Sayfa:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
+        .setDescription(`**${t('common.total_members', lang)}:** ${members.length}\n**${t('common.page', lang)}:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
 
     return embed;
 }
 
 /**
- * Handles /uyeler command
+ * Handles /members command
  */
-async function handleUyelerCommand(interaction) {
+async function handleMembersCommand(interaction) {
+
     const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
     const guildId = guildConfig?.albion_guild_id;
 
     if (!guildId) {
-        return await safeReply(interaction, { content: '❌ Bu sunucu için Albion Lonca IDsi ayarlanmamış. Lütfen `/ayar` komutunu kullanın.', flags: [MessageFlags.Ephemeral] });
+        return await safeReply(interaction, { content: `❌ ${t('common.config_required', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
     await interaction.deferReply();
 
     try {
-        const { getEuropeGuildMembers } = require('../services/albionApiService');
         const members = await getEuropeGuildMembers(guildId);
         // Sort alphabetically
         members.sort((a, b) => a.Name.localeCompare(b.Name));
 
-        const embed = createMemberPageEmbed(members, 0, guildConfig.guild_name);
+        const embed = createMemberPageEmbed(members, 0, guildConfig.guild_name, lang);
 
 
-        const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('members_prev_0')
-                .setLabel('⬅️ Geri')
+                .setLabel(`⬅️ ${t('common.back', lang)}`)
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(true),
             new ButtonBuilder()
                 .setCustomId(`members_next_0`)
-                .setLabel('İleri ➡️')
+                .setLabel(`${t('common.next', lang)} ➡️`)
                 .setStyle(ButtonStyle.Secondary)
                 .setDisabled(members.length <= 20)
         );
@@ -217,16 +232,19 @@ async function handleUyelerCommand(interaction) {
         return await interaction.editReply({ embeds: [embed], components: [row] });
     } catch (error) {
         console.error('[Uyeler] Hata:', error);
-        return await interaction.editReply({ content: `❌ Üye listesi alınırken bir hata oluştu: ${error.message}` });
+        return await interaction.editReply({ content: `❌ ${t('common.error', lang)}: ${error.message}` });
     }
 }
 
 
 /**
- * Handles /me command
+ * Handles /stats command
  */
-async function handleMeCommand(interaction) {
-    const ign = interaction.options.getString('isim');
+async function handleStatsCommand(interaction) {
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+    const ign = interaction.options.getString('name');
 
 
     await interaction.deferReply();
@@ -235,7 +253,7 @@ async function handleMeCommand(interaction) {
         // 1. Oyuncuyu ara ve ID'sini bul
         const playerData = await searchPlayer(ign);
         if (!playerData) {
-            return await interaction.editReply({ content: `❌ **${ign}** isminde bir oyuncu Avrupa sunucusunda bulunamadı.` });
+            return await interaction.editReply({ content: `❌ **${ign}** ${t('stats.not_found', lang)}` });
         }
 
         // 2. ID ile detaylı istatistikleri çek
@@ -250,20 +268,20 @@ async function handleMeCommand(interaction) {
         const kd = deathFame > 0 ? (killFame / deathFame).toFixed(2) : killFame.toFixed(2);
 
         const embed = new EmbedBuilder()
-            .setTitle(`👤 Oyuncu Profili: ${stats.Name}`)
+            .setTitle(`👤 ${t('stats.profile', lang)}: ${stats.Name}`)
             .setColor('#3498DB')
             .setThumbnail(`https://render.albiononline.com/v1/spell/PLAYER_PORTRAIT_FARMER.png`) // Geçici ikon
             .addFields(
-                { name: '🏰 Lonca', value: stats.GuildName || 'Yok', inline: true },
-                { name: '🆔 Player-ID', value: `\`${stats.Id}\``, inline: true },
-                { name: '⭐ Total Fame', value: (stats.KillFame || 0).toLocaleString(), inline: true },
+                { name: `🏰 ${t('stats.guild', lang)}`, value: stats.GuildName || t('common.not_set', lang), inline: true },
+                { name: `🆔 ${t('stats.player_id', lang)}`, value: `\`${stats.Id}\``, inline: true },
+                { name: `⭐ ${t('stats.total_fame', lang)}`, value: (stats.KillFame || 0).toLocaleString(), inline: true },
 
-                { name: '\u200b', value: '⚔️ **PVP İSTATİSTİKLERİ**', inline: false },
-                { name: '💀 Kill Fame', value: killFame.toLocaleString(), inline: true },
-                { name: '⚰️ Death Fame', value: deathFame.toLocaleString(), inline: true },
-                { name: '📊 K/D', value: kd.toString(), inline: true },
+                { name: '\u200b', value: `⚔️ **${t('stats.pvp_title', lang)}**`, inline: false },
+                { name: `💀 ${t('stats.kill_fame', lang)}`, value: killFame.toLocaleString(), inline: true },
+                { name: `⚰️ ${t('stats.death_fame', lang)}`, value: deathFame.toLocaleString(), inline: true },
+                { name: `📊 ${t('stats.kd', lang)}`, value: kd.toString(), inline: true },
 
-                { name: '\u200b', value: '🏹 **PVE İSTATİSTİKLERİ**', inline: false },
+                { name: '\u200b', value: `🏹 **${t('stats.pve_title', lang)}**`, inline: false },
                 { name: 'Total PVE', value: (pve.Total || 0).toLocaleString(), inline: true },
                 { name: 'Royals', value: (pve.Royal || 0).toLocaleString(), inline: true },
                 { name: 'Outlands', value: (pve.Outlands || 0).toLocaleString(), inline: true },
@@ -271,7 +289,7 @@ async function handleMeCommand(interaction) {
                 { name: 'Corrupted', value: (pve.CorruptedDungeon || 0).toLocaleString(), inline: true },
                 { name: 'Mists', value: (pve.Mists || 0).toLocaleString(), inline: true },
 
-                { name: '\u200b', value: '⛏️ **TOPLAYICILIK & DİĞER**', inline: false },
+                { name: '\u200b', value: `⛏️ **${t('stats.gathering_title', lang)}**`, inline: false },
                 { name: 'Gathering Total', value: (gathering.All?.Total || 0).toLocaleString(), inline: true },
                 { name: 'Fiber', value: (gathering.Fiber?.Total || 0).toLocaleString(), inline: true },
                 { name: 'Hide', value: (gathering.Hide?.Total || 0).toLocaleString(), inline: true },
@@ -283,50 +301,58 @@ async function handleMeCommand(interaction) {
                 { name: 'Fishing', value: (stats.LifetimeStatistics?.FishingFame || 0).toLocaleString(), inline: true },
                 { name: 'Farming', value: (stats.LifetimeStatistics?.FarmingFame || 0).toLocaleString(), inline: true }
             )
-            .setFooter({ text: 'Veriler Albion Online Avrupa API üzerinden anlık alınmıştır.' })
+            .setFooter({ text: t('stats.api_footer', lang) })
             .setTimestamp();
 
         return await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
         console.error('[MeCommand] Hata:', error);
-        return await interaction.editReply({ content: `❌ İstatistikler çekilirken bir hata oluştu: ${error.message}` });
+        return await interaction.editReply({ content: `❌ ${t('stats.api_error', lang)}: ${error.message}` });
     }
 }
 
 /**
- * Handles /ayar command
+ * Handles /settings command
  */
-async function handleAyarCommand(interaction) {
-    const guildName = interaction.options.getString('lonca-ismi');
-    const albionGuildId = interaction.options.getString('lonca-id');
+async function handleSettingsCommand(interaction) {
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const oldLang = guildConfig?.language || 'tr';
+
+    const guildName = interaction.options.getString('guild-name');
+    const albionGuildId = interaction.options.getString('guild-id');
+    const language = interaction.options.getString('language');
 
     const success = await updateGuildConfig(interaction.guildId, {
         guild_name: guildName,
-        albion_guild_id: albionGuildId
+        albion_guild_id: albionGuildId,
+        language: language
     });
+
+    const lang = success ? language : oldLang;
 
     if (success) {
         return await safeReply(interaction, {
-            content: `✅ **Sunucu ayarları başarıyla güncellendi!**\n\n🏰 **Lonca İsmi:** ${guildName}\n🆔 **Albion ID:** \`${albionGuildId}\``,
+            content: `✅ **${t('settings.success', lang)}**\n\n🏰 **${t('settings.guild_name', lang)}:** ${guildName}\n🆔 **${t('settings.albion_id', lang)}:** \`${albionGuildId}\`\n🌐 **${t('settings.lang_set', lang)}:** ${language === 'tr' ? 'Türkçe' : 'English'}`,
             flags: [MessageFlags.Ephemeral]
         });
     } else {
         return await safeReply(interaction, {
-            content: '❌ Ayarlar kaydedilirken bir hata oluştu.',
+            content: `❌ ${t('settings.error_saving', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
     }
 }
 
 module.exports = {
-    handleYardimCommand,
-    handlePartikapatCommand,
-    handleUyelerCommand,
-    handleMeCommand,
-    handleWladdCommand,
-    handleWlremoveCommand,
-    handleAyarCommand,
+    handleHelpCommand,
+    handleClosePartyCommand,
+    handleMembersCommand,
+    handleStatsCommand,
+    handleWhitelistAddCommand,
+    handleWhitelistRemoveCommand,
+    handleSettingsCommand,
     createMemberPageEmbed
 };
 

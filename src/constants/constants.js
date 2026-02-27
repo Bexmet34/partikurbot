@@ -7,13 +7,25 @@ const DEFAULT_CONTENT = "STATİK RAT\nTRACKİNG BİZİM MAP\nGRUP CAMP BOSS LAIR
 const config = require('../config/config');
 
 // Notes Text
-const getNotlarMetni = (guildName) => [
-    `**📌 ${guildName}** guild kurallarına uyum zorunludur.`,
-    '**🎤 Discord** sesli kanala giriş zorunludur.',
-    '**🛡️ Kendi bölgelerimizde** ölüm riski yoktur.',
-    '**💰 Loot** dağıtımı lidere aittir.',
-    '**⏰ Geç kalan** alınmaz.'
-].join('\n');
+const getNotlarMetni = (guildName, lang = 'tr') => {
+    if (lang === 'en') {
+        return [
+            `**📌 ${guildName}** guild rules must be followed.`,
+            '**🎤 Discord** voice channel is mandatory.',
+            '**🛡️ No death risk** in our own territories.',
+            '**💰 Loot** distribution belongs to the leader.',
+            '**⏰ Latecomers** will not be accepted.'
+        ].join('\n');
+    }
+    return [
+        `**📌 ${guildName}** guild kurallarına uyum zorunludur.`,
+        '**🎤 Discord** sesli kanala giriş zorunludur.',
+        '**🛡️ Kendi bölgelerimizde** ölüm riski yoktur.',
+        '**💰 Loot** dağıtımı lidere aittir.',
+        '**⏰ Geç kalan** alınmaz.'
+    ].join('\n');
+};
+
 
 
 

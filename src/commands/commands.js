@@ -2,56 +2,61 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
 const commands = [
     new SlashCommandBuilder()
-        .setName('partikur')
-        .setDescription('Özel bir parti başvurusu oluşturur.'),
+        .setName('createparty')
+        .setDescription('Create a dynamic party recruitment form.'),
     new SlashCommandBuilder()
-        .setName('yardim')
-        .setDescription('Bot komutları ve geliştirici hakkında bilgi verir.'),
+        .setName('help')
+        .setDescription('Shows bot commands and assistance.'),
     new SlashCommandBuilder()
-        .setName('partikapat')
-        .setDescription('Aktif partinizi sonlandırır.'),
+        .setName('closeparty')
+        .setDescription('Manually end your active parties.'),
     new SlashCommandBuilder()
-        .setName('uyeler')
-        .setDescription('Avrupa sunucusu lonca üyelerini listeler.'),
-
-
+        .setName('members')
+        .setDescription('List active guild members from the Europe server.'),
     new SlashCommandBuilder()
-        .setName('player')
-        .setDescription('Bir oyuncunun istatistiklerini gösterir.')
+        .setName('stats')
+        .setDescription('Display statistics for a specific player.')
         .addStringOption(option =>
-            option.setName('isim')
-                .setDescription('İstatistikleri görülecek oyuncunun adı')
+            option.setName('name')
+                .setDescription('Name of the player to fetch stats for')
                 .setRequired(true)),
     new SlashCommandBuilder()
-        .setName('wladd')
-        .setDescription('Kullanıcıyı beyaz listeye ekler (Maks 3 parti kurabilir).')
+        .setName('whitelistadd')
+        .setDescription('Add a user to the whitelist (Can create up to 3 parties).')
         .addUserOption(option =>
-            option.setName('kullanici')
-                .setDescription('Beyaz listeye eklenecek kullanıcı')
+            option.setName('user')
+                .setDescription('User to add to the whitelist')
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
-        .setName('wlremove')
-        .setDescription('Kullanıcıyı beyaz listeden çıkarır.')
+        .setName('whitelistremove')
+        .setDescription('Remove a user from the whitelist.')
         .addUserOption(option =>
-            option.setName('kullanici')
-                .setDescription('Beyaz listeden çıkarılacak kullanıcı')
+            option.setName('user')
+                .setDescription('User to remove from the whitelist')
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
     new SlashCommandBuilder()
-        .setName('ayar')
-        .setDescription('Sunucuya özel bot ayarlarını yapılandırır.')
+        .setName('settings')
+        .setDescription('Configure guild-specific bot settings.')
         .addStringOption(option =>
-            option.setName('lonca-ismi')
-                .setDescription('Loncanızın görünen adı (Örn: Turquoise)')
+            option.setName('guild-name')
+                .setDescription('Your guild name display (e.g., Turquoise)')
                 .setRequired(true))
         .addStringOption(option =>
-            option.setName('lonca-id')
-                .setDescription('Albion API Guild IDsi (Oyun içi API ID)')
+            option.setName('guild-id')
+                .setDescription('Albion API Guild ID')
+                .setRequired(true))
+        .addStringOption(option =>
+            option.setName('language')
+                .setDescription('Language for the bot (Turkish or English)')
+                .addChoices(
+                    { name: 'Türkçe', value: 'tr' },
+                    { name: 'English', value: 'en' }
+                )
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
 ].map(command => command.toJSON());
+
 
 module.exports = commands;

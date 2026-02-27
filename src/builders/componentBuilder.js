@@ -1,27 +1,26 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { EMPTY_SLOT, ROLE_ICONS } = require('../constants/constants');
+const { t } = require('../services/i18n');
+
 
 /**
  * Creates PVE action buttons
  */
-/**
- * Creates PVE action buttons
- */
-function createPveButtons(ownerId) {
+function createPveButtons(ownerId, lang = 'tr') {
     return new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('join_tank').setLabel('Tank').setEmoji(ROLE_ICONS.TANK).setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('join_heal').setLabel('Heal').setEmoji(ROLE_ICONS.HEAL).setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('join_dps').setLabel('DPS').setEmoji(ROLE_ICONS.DPS).setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('leave').setLabel('Ayrıl').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel('Partiyi Kapat').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel(t('common.close_party', lang)).setStyle(ButtonStyle.Danger)
         );
 }
 
 /**
  * Creates custom party buttons based on roles
  */
-function createCustomPartyComponents(rolesList, ownerId) {
+function createCustomPartyComponents(rolesList, ownerId, lang = 'tr') {
     const rows = [];
     let currentRow = new ActionRowBuilder();
 
@@ -44,13 +43,12 @@ function createCustomPartyComponents(rolesList, ownerId) {
 
     if (currentRow.components.length > 0) rows.push(currentRow);
 
-    const leaveBtn = new ButtonBuilder().setCustomId('leave').setLabel('Ayrıl').setStyle(ButtonStyle.Secondary);
-    const closeBtn = new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel('Partiyi Kapat').setStyle(ButtonStyle.Danger);
+    const leaveBtn = new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary);
+    const closeBtn = new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel(t('common.close_party', lang)).setStyle(ButtonStyle.Danger);
 
     // Add buttons logically
     let lastRow = rows[rows.length - 1];
 
-    // Try to fit Leave and Close buttons
     if (lastRow.components.length <= 3) {
         lastRow.addComponents(leaveBtn, closeBtn);
     } else if (lastRow.components.length === 4) {
@@ -66,11 +64,12 @@ function createCustomPartyComponents(rolesList, ownerId) {
 /**
  * Creates closed party button
  */
-function createClosedButton() {
+function createClosedButton(lang = 'tr') {
     return new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('closed').setLabel('BU BAŞVURU KAPANDI').setStyle(ButtonStyle.Secondary).setDisabled(true)
+        new ButtonBuilder().setCustomId('closed').setLabel(t('common.party_closed_label', lang)).setStyle(ButtonStyle.Secondary).setDisabled(true)
     );
 }
+
 
 /**
  * Updates button states based on field availability
