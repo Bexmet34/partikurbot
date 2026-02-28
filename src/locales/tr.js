@@ -58,8 +58,8 @@ module.exports = {
         donate_button: '🎁 Bağış Yap',
         donate_title: '🎁 Destek & Bağış',
         donate_description: 'Botun gelişimine destek olmak ve sunucu masraflarına katkıda bulunmak isterseniz aşağıdaki kanalları kullanabilirsiniz.',
-        donate_bank_info: '🏦 **Banka Hesap Bilgileri:**\n\n**İsim:** [İsim Soyisim]\n**IBAN:** [IBAN NUMARASI]\n\n*QR kodu okutarak hızlıca işlem yapabilirsiniz.*',
-        donate_paytr_soon: '💳 *PayTR yakında eklenecek!*'
+        donate_bank_info: '🔗 **Bağış Linki:**\n\nAşağıdaki butona tıklayarak veya bu linki kullanarak bağış yapabilirsiniz:\nhttps://www.shopier.com/CyberShadows/44734656',
+        donate_paytr_soon: '💎 *Desteğiniz için teşekkür ederiz!*'
     },
     settings: {
         success: 'Sunucu ayarları başarıyla güncellendi!',

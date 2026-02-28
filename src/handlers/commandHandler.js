@@ -35,7 +35,7 @@ async function handleHelpCommand(interaction) {
     const linkRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
         new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB'),
-        new ButtonBuilder().setCustomId('donate_info').setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Danger)
+        new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
     );
 
 

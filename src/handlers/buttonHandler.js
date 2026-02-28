@@ -42,21 +42,14 @@ async function handlePartyButtons(interaction) {
         const linkRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
             new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB'),
-            new ButtonBuilder().setCustomId('donate_info').setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
         );
 
 
         return await interaction.update({ embeds: [newEmbed], components: [row, linkRow] });
     }
 
-    // Donation Info Button
-    if (customId === 'donate_info') {
-        const donateEmbed = createDonateEmbed(lang);
-        return await interaction.reply({
-            embeds: [donateEmbed],
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
+
 
 
 
