@@ -64,6 +64,12 @@ function getActiveParties(userId) {
     const data = readData();
     const entry = data[userId];
     if (!entry) return [];
+
+    // Support legacy single-object storage by wrapping it in an array
+    if (!Array.isArray(entry)) {
+        return [entry];
+    }
+
     return entry;
 }
 
@@ -118,17 +124,25 @@ function removeActiveParty(userId, messageId = null) {
     }
 
     // Array handling
-    const initialLength = entry.length;
-    data[userId] = entry.filter(p => p.messageId !== messageId);
+    if (Array.isArray(entry)) {
+        data[userId] = entry.filter(p => {
+            const mid = typeof p === 'object' ? p.messageId : p;
+            return mid !== messageId;
+        });
 
-    if (data[userId].length === 0) {
-        delete data[userId];
+        if (data[userId].length === 0) {
+            delete data[userId];
+        }
+    } else {
+        // Handle legacy single object or non-array (already checked not null/undefined)
+        const storedId = typeof entry === 'object' ? entry.messageId : entry;
+        if (storedId === messageId) {
+            delete data[userId];
+        }
     }
 
     writeData(data);
-    // console.log(`[PartyManager] ✅ Database Updated: User ${userId} party ${messageId} removed.`);
     return true;
-
 }
 
 module.exports = {

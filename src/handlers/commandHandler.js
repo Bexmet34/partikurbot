@@ -34,7 +34,8 @@ async function handleHelpCommand(interaction) {
 
     const linkRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
-        new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
+        new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB'),
+        new ButtonBuilder().setCustomId('donate_info').setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Danger)
     );
 
 
@@ -51,54 +52,77 @@ async function handleHelpCommand(interaction) {
  * Handles /closeparty command
  */
 async function handleClosePartyCommand(interaction) {
-
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
     const userId = interaction.user.id;
-    console.log(`[CommandHandler] /closeparty triggered by ${interaction.user.tag}`);
+
+    console.log(`[CommandHandler] /closeparty triggered by ${interaction.user.tag} (${userId})`);
 
     try {
         const parties = getActiveParties(userId);
 
         if (!parties || parties.length === 0) {
+            console.log(`[CommandHandler] No active parties found for ${interaction.user.tag}`);
             return await safeReply(interaction, {
                 content: `❌ **${t('common.no_party', lang)}**`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
+        console.log(`[CommandHandler] Closing ${parties.length} parties for ${interaction.user.tag}`);
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }).catch(() => { });
 
         let totalClosed = 0;
+
+        // Use a copy of the array if needed, though getActiveParties returns a new array from JSON.parse
         for (const partyInfo of parties) {
-            const messageId = partyInfo.messageId;
-            const channelId = partyInfo.channelId;
+            const messageId = typeof partyInfo === 'object' ? partyInfo.messageId : partyInfo;
+            const channelId = typeof partyInfo === 'object' ? partyInfo.channelId : null;
 
             if (channelId && messageId) {
                 try {
-                    const channel = await interaction.client.channels.fetch(channelId);
-                    const message = await channel?.messages.fetch(messageId);
+                    const channel = await interaction.client.channels.fetch(channelId).catch(() => null);
+                    if (!channel) {
+                        console.log(`[CommandHandler] Channel ${channelId} not found or inaccessible for party ${messageId}`);
+                    } else {
+                        const message = await channel.messages.fetch(messageId).catch(() => null);
 
-                    if (message && message.embeds[0]) {
-                        const oldEmbed = message.embeds[0];
-                        const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
-                        const closedEmbed = EmbedBuilder.from(oldEmbed)
-                            .setTitle(`${oldEmbed.title} [${t('common.closed', lang)}]`)
-                            .setColor('#808080')
-                            .setFields(newFields)
-                            .setFooter(null)
-                            .setTimestamp(null);
+                        if (message && message.embeds && message.embeds[0]) {
+                            const oldEmbed = message.embeds[0];
+                            // FIX: Added optional chaining and default empty array for fields
+                            const fields = oldEmbed.fields || [];
+                            const newFields = fields.filter(f => f.name && !f.name.includes('📌') && !f.name.includes('KURALLAR'));
 
-                        const closedRow = createClosedButton(lang);
-                        await message.edit({ embeds: [closedEmbed], components: [closedRow] });
-                        totalClosed++;
+                            const closedEmbed = EmbedBuilder.from(oldEmbed)
+                                .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
+                                .setColor('#808080')
+                                .setFields(newFields)
+                                .setFooter(null)
+                                .setTimestamp(null);
+
+                            const closedRow = createClosedButton(lang);
+                            await message.edit({ embeds: [closedEmbed], components: [closedRow] }).catch(e => {
+                                console.log(`[CommandHandler] Message edit failed for ${messageId}: ${e.message}`);
+                            });
+                            totalClosed++;
+                        }
                     }
                 } catch (err) {
                     console.log(`[CommandHandler] Visual close failed for ${messageId}: ${err.message}`);
                 }
             }
-            // Clear each one from DB
-            removeActiveParty(userId, messageId);
+
+            // Clear each one from JSON DB
+            try {
+                removeActiveParty(userId, messageId);
+            } catch (dbErr) {
+                console.error(`[CommandHandler] Failed to remove party ${messageId} from JSON DB:`, dbErr);
+            }
+
+            // Also attempt to clear from SQLite DB
+            try {
+                await db.run('UPDATE parties SET status = ? WHERE message_id = ?', ['closed', messageId]).catch(() => { });
+            } catch (dbErr) { }
         }
 
         const responseContent = totalClosed > 0
@@ -107,14 +131,31 @@ async function handleClosePartyCommand(interaction) {
 
         await interaction.editReply({ content: responseContent }).catch(() => { });
 
-
     } catch (error) {
-        console.error('[CommandHandler] Critical Error:', error);
-        // Fallback: try to clear all for this user
-        const parties = getActiveParties(userId);
-        parties.forEach(p => removeActiveParty(userId, p.messageId));
+        console.error('[CommandHandler] Critical Error in handleClosePartyCommand:', error);
 
-        await interaction.followUp({ content: `❌ ${t('common.error', lang)}`, flags: [MessageFlags.Ephemeral] }).catch(() => { });
+        // Emergency cleanup: wipe all parties for this user if something went wrong
+        try {
+            const parties = getActiveParties(userId);
+            if (Array.isArray(parties)) {
+                parties.forEach(p => {
+                    const mid = typeof p === 'object' ? p.messageId : p;
+                    removeActiveParty(userId, mid);
+                });
+            } else {
+                removeActiveParty(userId); // Total wipe for user
+            }
+
+            // Wipe from SQLite too
+            await db.run('UPDATE parties SET status = ? WHERE owner_id = ? AND status = ?', ['closed', userId, 'active']).catch(() => { });
+        } catch (backupErr) {
+            console.error('[CommandHandler] Emergency cleanup failed:', backupErr);
+        }
+
+        await interaction.followUp({
+            content: `❌ **${t('common.error', lang)}**\n${error.message}`,
+            flags: [MessageFlags.Ephemeral]
+        }).catch(() => { });
     }
 }
 

@@ -120,7 +120,7 @@ function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
                 { name: '🌐 Web Site', value: '[veyronixbot.vercel.app](https://veyronixbot.vercel.app/)', inline: true },
                 { name: `💬 ${t('help.support_server', lang)}`, value: `[${t('settings.success', lang).includes('successfully') ? 'Join here' : 'Katılmak için tıkla'}](https://discord.gg/RZJE77KEVB)`, inline: true },
 
-                { name: '💎 Developer', value: 'Hakkı', inline: true }
+                { name: '💎 Developer', value: 'Nyks', inline: true }
             )
             .setTimestamp()
             .setFooter({ text: `${t('common.page', lang)} 4/4 • ${t('help.footer_contact', lang)}` })
@@ -132,11 +132,29 @@ function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
     return embeds[page] || embeds[0];
 }
 
+/**
+ * Creates the donation embed
+ */
+function createDonateEmbed(lang = 'tr') {
+    const embed = new EmbedBuilder()
+        .setTitle(t('help.donate_title', lang))
+        .setDescription(t('help.donate_description', lang))
+        .setColor('#E91E63')
+        .addFields(
+            { name: '\u200b', value: t('help.donate_bank_info', lang) }
+        )
+        // .setImage('QR_CODE_IMAGE_URL_HERE') // QR kod görselini buraya ekleyebilirsiniz
+        .setFooter({ text: t('help.donate_paytr_soon', lang) });
+
+    return embed;
+}
+
 
 module.exports = {
     createEmbed,
     createPartikurEmbed,
     createHelpEmbed,
+    createDonateEmbed,
     createProgressBar
 };
 

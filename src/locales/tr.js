@@ -54,7 +54,12 @@ module.exports = {
         footer_nav: 'Navigasyon butonlarını kullanın',
         footer_commands: 'Detaylı komut yardımı',
         footer_limits: 'Limit ve Kurallar',
-        footer_contact: 'İletişim'
+        footer_contact: 'İletişim',
+        donate_button: '🎁 Bağış Yap',
+        donate_title: '🎁 Destek & Bağış',
+        donate_description: 'Botun gelişimine destek olmak ve sunucu masraflarına katkıda bulunmak isterseniz aşağıdaki kanalları kullanabilirsiniz.',
+        donate_bank_info: '🏦 **Banka Hesap Bilgileri:**\n\n**İsim:** [İsim Soyisim]\n**IBAN:** [IBAN NUMARASI]\n\n*QR kodu okutarak hızlıca işlem yapabilirsiniz.*',
+        donate_paytr_soon: '💳 *PayTR yakında eklenecek!*'
     },
     settings: {
         success: 'Sunucu ayarları başarıyla güncellendi!',

@@ -6,7 +6,7 @@ const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
 const { createProgressBar } = require('../utils/generalUtils');
 const { getGuildConfig } = require('../services/guildConfig');
-const { createHelpEmbed } = require('../builders/embedBuilder');
+const { createHelpEmbed, createDonateEmbed } = require('../builders/embedBuilder');
 const db = require('../services/db');
 const { t } = require('../services/i18n');
 
@@ -41,11 +41,21 @@ async function handlePartyButtons(interaction) {
 
         const linkRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
-            new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB')
+            new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB'),
+            new ButtonBuilder().setCustomId('donate_info').setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Danger)
         );
 
 
         return await interaction.update({ embeds: [newEmbed], components: [row, linkRow] });
+    }
+
+    // Donation Info Button
+    if (customId === 'donate_info') {
+        const donateEmbed = createDonateEmbed(lang);
+        return await interaction.reply({
+            embeds: [donateEmbed],
+            flags: [MessageFlags.Ephemeral]
+        });
     }
 
 
@@ -62,9 +72,11 @@ async function handlePartyButtons(interaction) {
         }
 
         const oldEmbed = message.embeds[0];
-        const newFields = oldEmbed.fields.filter(f => !f.name.includes('📌') && !f.name.includes('KURALLAR'));
+        const fields = oldEmbed.fields || [];
+        const newFields = fields.filter(f => f.name && !f.name.includes('📌') && !f.name.includes('KURALLAR'));
+
         const closedEmbed = EmbedBuilder.from(oldEmbed)
-            .setTitle(`${oldEmbed.title} [${t('common.closed', lang)}]`)
+            .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
             .setColor('#808080')
             .setFields(newFields)
             .setFooter(null)

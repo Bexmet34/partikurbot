@@ -54,7 +54,12 @@ module.exports = {
         footer_nav: 'Use navigation buttons',
         footer_commands: 'Detailed command help',
         footer_limits: 'Limits and Rules',
-        footer_contact: 'Contact'
+        footer_contact: 'Contact',
+        donate_button: '🎁 Support / Donate',
+        donate_title: '🎁 Support & Donation',
+        donate_description: 'If you would like to support the development of the bot and contribute to the server costs, you can use the channels below.',
+        donate_bank_info: '🏦 **Bank Account Information:**\n\n**Name:** [Name Surname]\n**IBAN:** [IBAN NUMBER]\n\n*You can also scan the QR code for quick transactions.*',
+        donate_paytr_soon: '💳 *PayTR adding soon!*'
     },
     settings: {
         success: 'Server settings updated successfully!',
