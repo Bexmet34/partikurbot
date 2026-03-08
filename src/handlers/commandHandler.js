@@ -39,7 +39,11 @@ async function handleHelpCommand(interaction) {
     );
 
 
-    return await safeReply(interaction, { embeds: [embed], components: [row, linkRow] });
+    return await safeReply(interaction, {
+        embeds: [embed],
+        components: [row, linkRow],
+        flags: [MessageFlags.Ephemeral]
+    });
 }
 
 

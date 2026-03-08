@@ -2,7 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { NOTLAR_METNI, ROLE_ICONS } = require('../constants/constants');
 const config = require('../config/config');
 const { t } = require('../services/i18n');
-const { createProgressBar } = require('../utils/generalUtils');
+const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
 
 /**
@@ -51,19 +51,44 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr') {
-    let desc = `📍 **${t('party.location', lang)}:** ${content}`;
-    if (description) {
-        desc += `\n\n📝 **${t('party.notes', lang)}:**\n${description}`;
-    }
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
+    const sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
 
     const embed = new EmbedBuilder()
-        .setTitle(`🛡️ ${guildName} | ${header}`)
-        .setDescription(desc)
-        .setColor('#F1C40F')
-        .setFooter({ text: `${t('common.fullness', lang)}: ${createProgressBar(currentCount, rolesList.length)}` });
+        .setTitle(sanitizedHeader)
+        .setColor(12770100);
+
+    const leaderText = ownerId ? `<@${ownerId}>` : t('common.not_set', lang);
+    const placeText = content || t('common.not_set', lang);
+    const descText = description || t('common.not_set', lang);
+
+    embed.addFields({
+        name: 'Genel Bilgiler',
+        value: `Parti Lideri: ${leaderText}\nÇıkış Yeri: ${placeText}\nAçıklama: ${descText}`
+    });
+
+    // The 'Roller' field will be added in handlePartiModal or buttonHandler
+    // with value as a multi-line string.
 
     return embed;
+}
+
+/**
+ * Creates the footer links and progress bar as fields
+ */
+function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
+    const progressBar = createProgressBar(currentCount, totalCount);
+
+    embed.addFields(
+        {
+            name: '',
+            value: `${currentCount}/${totalCount} ${progressBar} (${Math.round((currentCount / totalCount) * 100)}%)`
+        },
+        {
+            name: '',
+            value: `[Website ](https://veyronixbot.vercel.app/) - [Support](https://discord.gg/RZJE77KEVB)  -  [Donate](https://www.shopier.com/CyberShadows/44734656)\n\n`
+        }
+    );
 }
 
 /**
@@ -150,9 +175,22 @@ function createDonateEmbed(lang = 'tr') {
 }
 
 
+/**
+ * Builds the multi-line string for the 'Roller' field
+ */
+function buildRolesValue(rolesWithMembers, lang = 'tr') {
+    return rolesWithMembers.map(item => {
+        const emoji = item.userId ? '🔴' : '🟡';
+        const mention = item.userId ? `<@${item.userId}>` : '" "';
+        return `${emoji} **${item.role}:** ${mention}`;
+    }).join('\n');
+}
+
 module.exports = {
     createEmbed,
     createPartikurEmbed,
+    addFooterFields,
+    buildRolesValue,
     createHelpEmbed,
     createDonateEmbed,
     createProgressBar

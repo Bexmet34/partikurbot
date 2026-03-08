@@ -82,11 +82,11 @@ module.exports = {
         create_party_title: 'Parti Oluştur',
         party_header_label: 'Parti Başlığı',
         party_header_placeholder: 'Başlığı giriniz',
-        party_content_label: 'İçerik Başlangıç Yeri',
-        party_content_placeholder: 'Örn: Lymhurst, Fort Sterling...',
+        party_content_label: 'Çıkış Yeri',
+        party_content_placeholder: 'Örn: Fort Portal, Lymhurst...',
         party_roles_label: 'Roller',
         party_roles_placeholder: 'Tank\nHeal\nDPS\n(Her satıra bir rol)',
-        party_desc_label: 'Parti Açıklaması / Notlar',
+        party_desc_label: 'Parti Açıklaması',
         party_desc_placeholder: 'Örn: T6-7 ayar. Kalite 4 ve üzeri haritalara gidicez.'
     },
 

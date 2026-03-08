@@ -71,7 +71,7 @@ async function startBot() {
 }
 
 // Client ready event
-client.once('ready', async (c) => {
+client.once('clientReady', async (c) => {
     console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
     console.log('\x1b[32m%s\x1b[0m', `🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString()})`);
     console.log('\x1b[35m%s\x1b[0m', `🌍 Service active on ${c.guilds.cache.size} servers.`);

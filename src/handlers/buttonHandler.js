@@ -129,107 +129,84 @@ async function handlePartyButtons(interaction) {
         }
     }
 
-    // ONLY proceed to party join/leave logic if it's a join/leave button
     if (customId === 'leave' || customId.startsWith('join_')) {
         const oldEmbed = message.embeds[0];
         const userId = interaction.user.id;
 
-        let fields = [...oldEmbed.fields];
-        const isUserInAnySlot = fields.some(f => f.value.includes(userId));
+        // Parse existing data
+        const fields = oldEmbed.fields;
+        const genelBilgiler = fields.find(f => f.name === 'Genel Bilgiler')?.value || '';
+        const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
 
-        // Helper function to check if a slot is empty
-        const isEmptySlot = (value) => value === EMPTY_SLOT;
+        // Extract Owner ID from leader mention in Genel Bilgiler
+        const ownerMatch = genelBilgiler.match(/<@(\d+)>/);
+        const ownerId = ownerMatch ? ownerMatch[1] : null;
+
+        // Extract Location and Description
+        const placeMatch = genelBilgiler.match(/Çıkış Yeri: (.*)\nAçıklama: (.*)/);
+        const content = placeMatch ? placeMatch[1] : '';
+        const description = placeMatch ? placeMatch[2] : '';
+
+        // Parse Roles from consolidated field
+        // Format: (🔴|🟡) **RoleName:** (<@ID>|" ")
+        const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+        let rolesWithMembers = [];
+        let match;
+        while ((match = roleRegex.exec(rollerValue)) !== null) {
+            rolesWithMembers.push({
+                role: match[1],
+                userId: match[2] || null
+            });
+        }
+
+        const isUserInAnySlot = rolesWithMembers.some(r => r.userId === userId);
 
         if (customId === 'leave') {
-            fields = fields.map(f => {
-                if (f.value.includes(userId)) {
-                    return {
-                        ...f,
-                        name: f.name.replace('🔴', '🟡'),
-                        value: EMPTY_SLOT
-                    };
-                }
-                return f;
-            });
-
-            // DB SYNC: Remove user from all roles in this party
+            rolesWithMembers = rolesWithMembers.map(r => r.userId === userId ? { ...r, userId: null } : r);
             db.run('UPDATE party_members SET user_id = NULL WHERE party_id = (SELECT id FROM parties WHERE message_id = ?) AND user_id = ?', [message.id, userId]).catch(e => console.error(e));
-        } else if (customId.startsWith('join_')) {
-            // If user is already in a slot, leave it first
-            if (isUserInAnySlot) {
-                fields = fields.map(f => {
-                    if (f.value.includes(userId)) {
-                        return {
-                            ...f,
-                            name: f.name.replace('🔴', '🟡'),
-                            value: EMPTY_SLOT
-                        };
-                    }
-                    return f;
-                });
+        } else {
+            // Join logic
+            let joinIndex = -1;
+            if (customId === 'join_tank') joinIndex = rolesWithMembers.findIndex(r => r.role.toLowerCase().includes('tank') && !r.userId);
+            else if (customId === 'join_heal') joinIndex = rolesWithMembers.findIndex(r => (r.role.toLowerCase().includes('heal') || r.role.toLowerCase().includes('healer')) && !r.userId);
+            else if (customId === 'join_dps') joinIndex = rolesWithMembers.findIndex(r => r.role.toLowerCase().includes('dps') && !r.userId);
+            else if (customId.startsWith('join_custom_')) {
+                const customIdx = parseInt(customId.split('_')[2]);
+                joinIndex = customIdx;
             }
 
-            let targetIndex = -1;
-
-            if (customId === 'join_tank') {
-                targetIndex = fields.findIndex(f => f.name.includes('Tank') && !f.name.includes('👥'));
-            } else if (customId === 'join_heal') {
-                targetIndex = fields.findIndex(f => f.name.includes('Heal') && !f.name.includes('👥'));
-            } else if (customId === 'join_dps') {
-                // Find first empty DPS slot
-                targetIndex = fields.findIndex(f =>
-                    f.name.includes('DPS') &&
-                    !f.name.includes('👥') &&
-                    isEmptySlot(f.value)
-                );
-            } else if (customId.startsWith('join_custom_')) {
-                const customIndex = parseInt(customId.split('_')[2]);
-                // Find the actual field index for custom roles
-                let roleCounter = 0;
-                for (let i = 0; i < fields.length; i++) {
-                    if (!fields[i].name.includes('👥') &&
-                        !fields[i].name.includes('📌') &&
-                        fields[i].name !== '\u200b' &&
-                        !fields[i].name.includes('KURALLAR')) {
-                        if (roleCounter === customIndex) {
-                            targetIndex = i;
-                            break;
-                        }
-                        roleCounter++;
-                    }
+            if (joinIndex !== -1 && !rolesWithMembers[joinIndex].userId) {
+                // Remove from old slot if switching
+                if (isUserInAnySlot) {
+                    rolesWithMembers = rolesWithMembers.map(r => r.userId === userId ? { ...r, userId: null } : r);
                 }
-            }
+                rolesWithMembers[joinIndex].userId = userId;
 
-            if (targetIndex !== -1) {
-                if (isEmptySlot(fields[targetIndex].value)) {
-                    fields[targetIndex].value = `<@${userId}>`;
-                    fields[targetIndex].name = fields[targetIndex].name.replace('🟡', '🔴');
-
-                    // DB SYNC: Update user in DB
-                    const roleName = fields[targetIndex].name.split('. ')[1]?.replace(':', '') || 'Unknown';
-                    db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?', [userId, roleName, message.id]).catch(e => console.error(e));
-                } else {
-                    return interaction.reply({ content: `❌ ${t('common.error', lang)}`, flags: [MessageFlags.Ephemeral] });
-                }
+                const roleName = rolesWithMembers[joinIndex].role;
+                db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?', [userId, roleName, message.id]).catch(e => console.error(e));
+            } else if (joinIndex !== -1 && rolesWithMembers[joinIndex].userId) {
+                return await interaction.reply({ content: `❌ ${t('common.error', lang)}`, flags: [MessageFlags.Ephemeral] });
             }
         }
 
-        // Recalculate filled slots for progress bar
-        const roleFields = fields.filter(f =>
-            !f.name.includes('👥') &&
-            !f.name.includes('📌') &&
-            f.name !== '\u200b' &&
-            !f.name.includes('KURALLAR')
-        );
-        const filledCount = roleFields.filter(f => !isEmptySlot(f.value)).length;
-        const totalCount = roleFields.length;
+        // Reconstruct Embed
+        const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
+        const filledCount = rolesWithMembers.filter(r => r.userId).length;
+        const totalCount = rolesWithMembers.length;
 
-        const newEmbed = EmbedBuilder.from(oldEmbed)
-            .setFields(fields)
-            .setFooter({ text: `${t('common.fullness', lang)}: ${createProgressBar(filledCount, totalCount)}` });
+        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId);
+        newEmbed.addFields({
+            name: 'Roller',
+            value: buildRolesValue(rolesWithMembers, lang),
+            inline: true
+        });
+        addFooterFields(newEmbed, filledCount, totalCount, lang);
 
-        // Re-generate components to update "DOLU" status
-        const newComponents = updateButtonStates(message.components, fields);
+        // Update components (DOLU status)
+        const newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
+            name: r.role,
+            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
+        })));
 
         await interaction.update({ embeds: [newEmbed], components: newComponents });
     }

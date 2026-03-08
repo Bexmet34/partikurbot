@@ -65,8 +65,8 @@ async function handleCreatePartyCommand(interaction) {
     modal.addComponents(
         new ActionRowBuilder().addComponents(headerInput),
         new ActionRowBuilder().addComponents(contentInput),
-        new ActionRowBuilder().addComponents(rolesInput),
-        new ActionRowBuilder().addComponents(descriptionInput)
+        new ActionRowBuilder().addComponents(descriptionInput),
+        new ActionRowBuilder().addComponents(rolesInput)
     );
 
     await interaction.showModal(modal);
