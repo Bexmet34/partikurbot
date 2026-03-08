@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const { EMPTY_SLOT, ROLE_ICONS } = require('../constants/constants');
 const { t } = require('../services/i18n');
 
@@ -7,14 +7,24 @@ const { t } = require('../services/i18n');
  * Creates PVE action buttons
  */
 function createPveButtons(ownerId, lang = 'tr') {
-    return new ActionRowBuilder()
+    const row1 = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('join_tank').setLabel('Tank').setEmoji(ROLE_ICONS.TANK).setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('join_heal').setLabel('Heal').setEmoji(ROLE_ICONS.HEAL).setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('join_dps').setLabel('DPS').setEmoji(ROLE_ICONS.DPS).setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel(t('common.close_party', lang)).setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary)
         );
+
+    const manageMenu = new StringSelectMenuBuilder()
+        .setCustomId(`manage_party_${ownerId}`)
+        .setPlaceholder(lang === 'tr' ? '⚙️ Partiyi Yönet' : '⚙️ Manage Party')
+        .addOptions(
+            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Partiyi Düzenle' : 'Edit Party').setValue('edit_party').setEmoji('📝'),
+            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Katılımcı Yönetimi' : 'Member Management').setValue('manage_members').setEmoji('👥'),
+            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Partiyi Kapat' : 'Close Party').setValue('close_party').setEmoji('🔒')
+        );
+
+    return [row1, new ActionRowBuilder().addComponents(manageMenu)];
 }
 
 /**
@@ -44,19 +54,38 @@ function createCustomPartyComponents(rolesList, ownerId, lang = 'tr') {
     if (currentRow.components.length > 0) rows.push(currentRow);
 
     const leaveBtn = new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary);
-    const closeBtn = new ButtonBuilder().setCustomId(`close_party_${ownerId}`).setLabel(t('common.close_party', lang)).setStyle(ButtonStyle.Danger);
 
-    // Add buttons logically
+    // Add leave button to the roles rows if there's space, or a new row
     let lastRow = rows[rows.length - 1];
-
-    if (lastRow.components.length <= 3) {
-        lastRow.addComponents(leaveBtn, closeBtn);
-    } else if (lastRow.components.length === 4) {
+    if (lastRow && lastRow.components.length < 5) {
         lastRow.addComponents(leaveBtn);
-        rows.push(new ActionRowBuilder().addComponents(closeBtn));
     } else {
-        rows.push(new ActionRowBuilder().addComponents(leaveBtn, closeBtn));
+        rows.push(new ActionRowBuilder().addComponents(leaveBtn));
     }
+
+    // Add Management Menu
+    const manageMenu = new StringSelectMenuBuilder()
+        .setCustomId(`manage_party_${ownerId}`)
+        .setPlaceholder(lang === 'tr' ? '⚙️ Partiyi Yönet' : '⚙️ Manage Party')
+        .addOptions(
+            new StringSelectMenuOptionBuilder()
+                .setLabel(lang === 'tr' ? 'Partiyi Düzenle' : 'Edit Party')
+                .setDescription(lang === 'tr' ? 'Başlık, açıklama ve rolleri günceller' : 'Updates title, description and roles')
+                .setValue('edit_party')
+                .setEmoji('📝'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel(lang === 'tr' ? 'Katılımcı Yönetimi' : 'Member Management')
+                .setDescription(lang === 'tr' ? 'Kullanıcıları rolden çıkar veya taşı' : 'Remove or move users')
+                .setValue('manage_members')
+                .setEmoji('👥'),
+            new StringSelectMenuOptionBuilder()
+                .setLabel(lang === 'tr' ? 'Partiyi Kapat' : 'Close Party')
+                .setDescription(lang === 'tr' ? 'Partiyi sonlandırır ve başvuruları durdurur' : 'Ends the party and stops applications')
+                .setValue('close_party')
+                .setEmoji('🔒')
+        );
+
+    rows.push(new ActionRowBuilder().addComponents(manageMenu));
 
     return rows;
 }
@@ -76,76 +105,66 @@ function createClosedButton(lang = 'tr') {
  */
 function updateButtonStates(oldComponents, newFields) {
     const rows = [];
-
-    // Helper function to check if a slot is empty
     const isEmptySlot = (value) => value === '-' || value.includes(EMPTY_SLOT);
 
     for (const oldRow of oldComponents) {
         const newRow = new ActionRowBuilder();
+
+        // Handle Select Menu Rows (keep them unchanged)
+        const firstComponent = oldRow.components[0];
+        if (firstComponent && (firstComponent.data.type === 3 || firstComponent.data.type === 'STRING_SELECT' || firstComponent.constructor.name.includes('Select'))) {
+            newRow.addComponents(firstComponent);
+            rows.push(newRow);
+            continue;
+        }
+
         for (const component of oldRow.components) {
             const btn = ButtonBuilder.from(component);
+            const customId = btn.data.custom_id;
             let isFull = false;
 
-            if (btn.data.custom_id === 'join_tank') {
-                const tankField = newFields.find(f => f.name.includes('Tank') && !f.name.includes('👥'));
+            if (customId === 'join_tank') {
+                const tankField = newFields.find(f => f.name.includes('Tank'));
                 if (tankField && !isEmptySlot(tankField.value)) isFull = true;
-            } else if (btn.data.custom_id === 'join_heal') {
-                const healField = newFields.find(f => f.name.includes('Heal') && !f.name.includes('👥'));
+                btn.setLabel('Tank').setEmoji(ROLE_ICONS.TANK);
+            } else if (customId === 'join_heal') {
+                const healField = newFields.find(f => f.name.includes('Heal'));
                 if (healField && !isEmptySlot(healField.value)) isFull = true;
-            } else if (btn.data.custom_id === 'join_dps') {
-                const dpsFields = newFields.filter(f => f.name.includes('DPS') && !f.name.includes('👥'));
+                btn.setLabel('Heal').setEmoji(ROLE_ICONS.HEAL);
+            } else if (customId === 'join_dps') {
+                const dpsFields = newFields.filter(f => f.name.includes('DPS'));
                 const emptyDps = dpsFields.filter(f => isEmptySlot(f.value));
                 if (emptyDps.length === 0) isFull = true;
-            } else if (btn.data.custom_id && btn.data.custom_id.startsWith('join_custom_')) {
-                const customIndex = parseInt(btn.data.custom_id.split('_')[2]);
-                // Find the actual field for custom roles
-                let roleCounter = 0;
-                for (let i = 0; i < newFields.length; i++) {
-                    if (!newFields[i].name.includes('👥') &&
-                        !newFields[i].name.includes('📌') &&
-                        newFields[i].name !== '\u200b' &&
-                        !newFields[i].name.includes('KURALLAR')) {
-                        if (roleCounter === customIndex) {
-                            if (!isEmptySlot(newFields[i].value)) {
-                                isFull = true;
-                            }
-                            break;
-                        }
-                        roleCounter++;
-                    }
+                btn.setLabel('DPS').setEmoji(ROLE_ICONS.DPS);
+            } else if (customId === 'leave') {
+                btn.setDisabled(false).setStyle(ButtonStyle.Secondary);
+            } else if (customId && customId.startsWith('join_custom_')) {
+                const customIndex = parseInt(customId.split('_')[2]);
+                const field = newFields[customIndex];
+                if (field && !isEmptySlot(field.value)) isFull = true;
+
+                if (field) {
+                    const label = field.name.replace(/^[^\w\s]*\s*/, '').replace(/:$/, '');
+                    if (label) btn.setLabel(label);
+                    else btn.setLabel(customIndex.toString());
                 }
             }
 
             if (isFull) {
-                btn.setDisabled(true);
-                btn.setStyle(ButtonStyle.Secondary);
-            } else {
-                if (btn.data.disabled && btn.data.style === ButtonStyle.Secondary) {
-                    if (btn.data.custom_id === 'join_tank') {
-                        btn.setLabel('Tank').setStyle(ButtonStyle.Primary).setDisabled(false);
-                    } else if (btn.data.custom_id === 'join_heal') {
-                        btn.setLabel('Heal').setStyle(ButtonStyle.Success).setDisabled(false);
-                    } else if (btn.data.custom_id === 'join_dps') {
-                        btn.setLabel('DPS').setStyle(ButtonStyle.Danger).setDisabled(false);
-                    } else if (btn.data.custom_id.startsWith('join_custom_')) {
-                        const customIndex = parseInt(btn.data.custom_id.split('_')[2]);
-                        let roleCounter = 0;
-                        for (let i = 0; i < newFields.length; i++) {
-                            if (!newFields[i].name.includes('👥') &&
-                                !newFields[i].name.includes('📌') &&
-                                newFields[i].name !== '\u200b' &&
-                                !newFields[i].name.includes('KURALLAR')) {
-                                if (roleCounter === customIndex) {
-                                    const recoveredLabel = newFields[i].name.replace(/^[^\w\s]*\s*/, '');
-                                    btn.setLabel(recoveredLabel || newFields[i].name).setStyle(ButtonStyle.Primary).setDisabled(false);
-                                    break;
-                                }
-                                roleCounter++;
-                            }
-                        }
-                    }
-                }
+                btn.setDisabled(true).setStyle(ButtonStyle.Secondary);
+            } else if (customId !== 'leave' && !customId?.startsWith('close_party_') && !customId?.startsWith('manage_party_')) {
+                if (customId === 'join_tank') btn.setStyle(ButtonStyle.Primary);
+                else if (customId === 'join_heal') btn.setStyle(ButtonStyle.Success);
+                else if (customId === 'join_dps') btn.setStyle(ButtonStyle.Danger);
+                else if (customId && customId.startsWith('join_custom_')) btn.setStyle(ButtonStyle.Primary);
+                btn.setDisabled(false);
             }
+
+            // Final safety for Discord restrictions
+            if (!btn.data.label && !btn.data.emoji) {
+                btn.setLabel('Slot ' + (customId?.split('_').pop() || ''));
+            }
+
             newRow.addComponents(btn);
         }
         rows.push(newRow);

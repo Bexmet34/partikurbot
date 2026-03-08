@@ -1,4 +1,4 @@
-const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require('discord.js');
+const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
 const { DEFAULT_CONTENT } = require('../constants/constants');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
@@ -365,33 +365,32 @@ async function handleStatsCommand(interaction) {
  * Handles /settings command
  */
 async function handleSettingsCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId) || {};
+    const lang = guildConfig.language || 'tr';
 
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const oldLang = guildConfig?.language || 'tr';
+    const embed = new EmbedBuilder()
+        .setTitle('⚙️ Bot Ayarları')
+        .setDescription('Lütfen botun dilini aşağıdan seçin:')
+        .setColor(3447003)
+        .addFields(
+            { name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true }
+        );
 
-    const guildName = interaction.options.getString('guild-name');
-    const albionGuildId = interaction.options.getString('guild-id');
-    const language = interaction.options.getString('language');
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('settings_lang_select')
+        .setPlaceholder('Bir dil seçin...')
+        .addOptions(
+            new StringSelectMenuOptionBuilder().setLabel('Türkçe 🇹🇷').setValue('tr').setEmoji('🇹🇷'),
+            new StringSelectMenuOptionBuilder().setLabel('English 🇺🇸').setValue('en').setEmoji('🇺🇸')
+        );
 
-    const success = await updateGuildConfig(interaction.guildId, {
-        guild_name: guildName,
-        albion_guild_id: albionGuildId,
-        language: language
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    return await safeReply(interaction, {
+        embeds: [embed],
+        components: [row],
+        flags: [MessageFlags.Ephemeral]
     });
-
-    const lang = success ? language : oldLang;
-
-    if (success) {
-        return await safeReply(interaction, {
-            content: `✅ **${t('settings.success', lang)}**\n\n🏰 **${t('settings.guild_name', lang)}:** ${guildName}\n🆔 **${t('settings.albion_id', lang)}:** \`${albionGuildId}\`\n🌐 **${t('settings.lang_set', lang)}:** ${language === 'tr' ? 'Türkçe' : 'English'}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    } else {
-        return await safeReply(interaction, {
-            content: `❌ ${t('settings.error_saving', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
 }
 
 module.exports = {

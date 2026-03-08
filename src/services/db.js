@@ -65,6 +65,7 @@ function initDb() {
                 albion_guild_id TEXT,
                 log_channel_id TEXT,
                 language TEXT DEFAULT 'tr',
+                welcome_message TEXT DEFAULT 'Selam, Hoşgeldiniz!',
                 setup_completed INTEGER DEFAULT 0
             )`);
 
@@ -84,6 +85,7 @@ function initDb() {
                         db.run("ALTER TABLE user_stats ADD COLUMN pve_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE user_stats ADD COLUMN pvp_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN language TEXT DEFAULT 'tr'", () => { });
+                        db.run("ALTER TABLE guild_configs ADD COLUMN welcome_message TEXT DEFAULT 'Selam, Hoşgeldiniz!'", () => { });
                         // Ensure system_settings exists for existing DBs
                         db.run(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`, () => { });
                         resolve();

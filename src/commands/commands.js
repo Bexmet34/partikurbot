@@ -39,22 +39,6 @@ const commands = [
     new SlashCommandBuilder()
         .setName('settings')
         .setDescription('Configure guild-specific bot settings.')
-        .addStringOption(option =>
-            option.setName('guild-name')
-                .setDescription('Your guild name display (e.g., Turquoise)')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('guild-id')
-                .setDescription('Albion API Guild ID')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('language')
-                .setDescription('Language for the bot (Turkish or English)')
-                .addChoices(
-                    { name: 'Türkçe', value: 'tr' },
-                    { name: 'English', value: 'en' }
-                )
-                .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 ].map(command => command.toJSON());
 

@@ -24,7 +24,7 @@ async function registerCommands(client) {
                 { body: commands },
             );
         }
-        // console.log('✅ Slash komutları yüklendi.');
+        console.log('✅ Slash komutları yüklendi.');
 
 
 

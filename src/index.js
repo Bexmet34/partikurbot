@@ -12,6 +12,8 @@ const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
+const { handleManageMenu, handleEditModal, handleKickMember } = require('./handlers/menuHandler');
+const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { initDb } = require('./services/db');
 const { getGuildConfig } = require('./services/guildConfig');
@@ -162,8 +164,20 @@ client.on('interactionCreate', async interaction => {
         } else if (interaction.isButton()) {
 
             await handlePartyButtons(interaction);
+        } else if (interaction.isStringSelectMenu()) {
+            if (interaction.customId.startsWith('manage_party_')) {
+                await handleManageMenu(interaction);
+            } else if (interaction.customId.startsWith('kick_member_')) {
+                await handleKickMember(interaction);
+            } else if (interaction.customId === 'settings_lang_select') {
+                await handleSettingsLanguageSelect(interaction);
+            }
         } else if (interaction.isModalSubmit()) {
-            await handlePartiModal(interaction);
+            if (interaction.customId.startsWith('edit_party_modal:')) {
+                await handleEditModal(interaction);
+            } else {
+                await handlePartiModal(interaction);
+            }
         }
     } catch (error) {
         const guildSettings = await getGuildConfig(interaction.guildId);
