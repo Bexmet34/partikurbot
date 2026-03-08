@@ -12,7 +12,7 @@ const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
-const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect } = require('./handlers/menuHandler');
+const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { initDb } = require('./services/db');
@@ -171,12 +171,21 @@ client.on('interactionCreate', async interaction => {
                 await handleJoinRoleSelect(interaction);
             } else if (interaction.customId.startsWith('kick_member_')) {
                 await handleKickMember(interaction);
+            } else if (interaction.customId.startsWith('add_member_select_')) {
+                await handleAddMemberSelect(interaction);
             } else if (interaction.customId === 'settings_lang_select') {
                 await handleSettingsLanguageSelect(interaction);
+            }
+        } else if (interaction.isUserSelectMenu()) {
+            if (interaction.customId.startsWith('add_member_user_select_')) {
+                await handleAddMemberUserSelect(interaction);
             }
         } else if (interaction.isModalSubmit()) {
             if (interaction.customId.startsWith('edit_party_modal:')) {
                 await handleEditModal(interaction);
+            } else if (interaction.customId.startsWith('add_member_modal:')) {
+                const { handleAddMemberModal } = require('./handlers/modalHandler');
+                await handleAddMemberModal(interaction);
             } else {
                 await handlePartiModal(interaction);
             }

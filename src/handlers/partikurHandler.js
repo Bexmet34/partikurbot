@@ -62,9 +62,19 @@ async function handleCreatePartyCommand(interaction) {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(false);
 
+    const timeInput = new TextInputBuilder()
+        .setCustomId('party_time')
+        .setLabel(t('party.party_time_label', lang))
+        .setPlaceholder(t('party.party_time_placeholder', lang))
+        .setStyle(TextInputStyle.Short)
+        .setMinLength(4)
+        .setMaxLength(4)
+        .setRequired(true);
+
     modal.addComponents(
         new ActionRowBuilder().addComponents(headerInput),
         new ActionRowBuilder().addComponents(contentInput),
+        new ActionRowBuilder().addComponents(timeInput),
         new ActionRowBuilder().addComponents(descriptionInput),
         new ActionRowBuilder().addComponents(rolesInput)
     );

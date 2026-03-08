@@ -86,6 +86,7 @@ function initDb() {
                         db.run("ALTER TABLE user_stats ADD COLUMN pvp_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN language TEXT DEFAULT 'tr'", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN welcome_message TEXT DEFAULT 'Selam, Hoşgeldiniz!'", () => { });
+                        db.run("ALTER TABLE parties ADD COLUMN party_time TEXT", () => { });
                         // Ensure system_settings exists for existing DBs
                         db.run(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`, () => { });
                         resolve();

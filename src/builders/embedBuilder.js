@@ -4,6 +4,44 @@ const config = require('../config/config');
 const { t } = require('../services/i18n');
 const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
+function parseEmbedData(embed, lang) {
+    const fields = embed.fields || [];
+    const genelBilgiler = fields.find(f => f.name === 'Genel Bilgiler')?.value || '';
+    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+
+    const ownerMatch = genelBilgiler.match(/<@(\d+)>/);
+    const ownerId = ownerMatch ? ownerMatch[1] : null;
+
+    const placeMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.location', lang)}:\\*\\* (.*)`));
+    const content = placeMatch ? placeMatch[1].split('\n')[0] : '';
+
+    const timeMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.party_time', lang)}:\\*\\* (.*)`));
+    const rawTime = timeMatch ? timeMatch[1].split('\n')[0] : '';
+    const partyTime = rawTime.replace(':', '').trim();
+
+    const descMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.party_description', lang)}:\\*\\* (.*)`));
+    const description = descMatch ? descMatch[1] : '';
+
+    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+    let rolesWithMembers = [];
+    let match;
+    while ((match = roleRegex.exec(rollerValue)) !== null) {
+        rolesWithMembers.push({
+            role: match[1],
+            userId: match[2] || null
+        });
+    }
+
+    return {
+        title: embed.title,
+        ownerId,
+        content,
+        partyTime,
+        description,
+        rolesWithMembers
+    };
+}
+
 
 /**
  * Creates a PVE embed
@@ -51,7 +89,7 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null, partyTime = null) {
     const sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
 
     const embed = new EmbedBuilder()
@@ -62,9 +100,18 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
     const placeText = content || t('common.not_set', lang);
     const descText = description || t('common.not_set', lang);
 
+    let timeText = t('common.not_set', lang);
+    if (partyTime) {
+        if (partyTime.length === 4 && /^\d+$/.test(partyTime)) {
+            timeText = `${partyTime.substring(0, 2)}:${partyTime.substring(2, 4)}`;
+        } else {
+            timeText = partyTime;
+        }
+    }
+
     embed.addFields({
         name: 'Genel Bilgiler',
-        value: `Parti Lideri: ${leaderText}\nÇıkış Yeri: ${placeText}\nAçıklama: ${descText}`
+        value: `**${t('party.party_leader', lang)}:** ${leaderText}\n**${t('party.location', lang)}:** ${placeText}\n**${t('party.party_time', lang)}:** ${timeText}\n**${t('party.party_description', lang)}:** ${descText}`
     });
 
     // The 'Roller' field will be added in handlePartiModal or buttonHandler
@@ -193,6 +240,7 @@ module.exports = {
     buildRolesValue,
     createHelpEmbed,
     createDonateEmbed,
-    createProgressBar
+    createProgressBar,
+    parseEmbedData
 };
 

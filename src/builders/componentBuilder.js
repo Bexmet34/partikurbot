@@ -15,16 +15,12 @@ function createPveButtons(ownerId, lang = 'tr') {
             new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary)
         );
 
-    const manageMenu = new StringSelectMenuBuilder()
-        .setCustomId(`manage_party_${ownerId}`)
-        .setPlaceholder(lang === 'tr' ? '⚙️ Partiyi Yönet' : '⚙️ Manage Party')
-        .addOptions(
-            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Partiyi Düzenle' : 'Edit Party').setValue('edit_party').setEmoji('📝'),
-            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Katılımcı Yönetimi' : 'Member Management').setValue('manage_members').setEmoji('👥'),
-            new StringSelectMenuOptionBuilder().setLabel(lang === 'tr' ? 'Partiyi Kapat' : 'Close Party').setValue('close_party').setEmoji('🔒')
-        );
+    const manageBtn = new ButtonBuilder()
+        .setCustomId(`open_settings_${ownerId}`)
+        .setLabel(lang === 'tr' ? '⚙️ Ayarlar' : '⚙️ Settings')
+        .setStyle(ButtonStyle.Secondary);
 
-    return [row1, new ActionRowBuilder().addComponents(manageMenu)];
+    return [row1, new ActionRowBuilder().addComponents(manageBtn)];
 }
 
 /**
@@ -159,26 +155,10 @@ function createButtonPartyComponents(rolesList, ownerId, lang) {
  * Creates the management select menu (shared between button and select menu modes)
  */
 function createManageMenu(ownerId, lang) {
-    return new StringSelectMenuBuilder()
-        .setCustomId(`manage_party_${ownerId}`)
-        .setPlaceholder(lang === 'tr' ? '⚙️ Partiyi Yönet' : '⚙️ Manage Party')
-        .addOptions(
-            new StringSelectMenuOptionBuilder()
-                .setLabel(lang === 'tr' ? 'Partiyi Düzenle' : 'Edit Party')
-                .setDescription(lang === 'tr' ? 'Başlık, açıklama ve rolleri günceller' : 'Updates title, description and roles')
-                .setValue('edit_party')
-                .setEmoji('📝'),
-            new StringSelectMenuOptionBuilder()
-                .setLabel(lang === 'tr' ? 'Katılımcı Yönetimi' : 'Member Management')
-                .setDescription(lang === 'tr' ? 'Kullanıcıları rolden çıkar veya taşı' : 'Remove or move users')
-                .setValue('manage_members')
-                .setEmoji('👥'),
-            new StringSelectMenuOptionBuilder()
-                .setLabel(lang === 'tr' ? 'Partiyi Kapat' : 'Close Party')
-                .setDescription(lang === 'tr' ? 'Partiyi sonlandırır ve başvuruları durdurur' : 'Ends the party and stops applications')
-                .setValue('close_party')
-                .setEmoji('🔒')
-        );
+    return new ButtonBuilder()
+        .setCustomId(`open_settings_${ownerId}`)
+        .setLabel(lang === 'tr' ? '⚙️ Ayarlar' : '⚙️ Settings')
+        .setStyle(ButtonStyle.Secondary);
 }
 
 /**

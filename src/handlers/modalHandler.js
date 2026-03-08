@@ -36,15 +36,24 @@ async function handlePartiModal(interaction) {
 
         const header = interaction.fields.getTextInputValue('party_header');
         const content = interaction.fields.getTextInputValue('party_content');
+        const partyTime = interaction.fields.getTextInputValue('party_time');
         const rolesRaw = interaction.fields.getTextInputValue('party_roles');
         const description = interaction.fields.getTextInputValue('party_description') || '';
+
+        // Validate partyTime (numeric only)
+        if (!/^\d+$/.test(partyTime)) {
+            return await interaction.reply({
+                content: `❌ **${t('common.error', lang)}:** ${t('party.party_time_label', lang)}`,
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
 
         // Split by newline and filter empty lines
         const rolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
 
         // CREATE PAYLOAD
         const { buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
-        const embed = createPartikurEmbed(header, rolesList, description, content, 0, guildName, lang, userId);
+        const embed = createPartikurEmbed(header, rolesList, description, content, 0, guildName, lang, userId, partyTime);
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
         const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
         embed.addFields({
@@ -66,8 +75,8 @@ async function handlePartiModal(interaction) {
             // SAVE TO DB
             try {
                 const result = await db.run(
-                    'INSERT INTO parties (message_id, channel_id, owner_id, type, title) VALUES (?, ?, ?, ?, ?)',
-                    [msgId, chanId, userId, type, header]
+                    'INSERT INTO parties (message_id, channel_id, owner_id, type, title, party_time) VALUES (?, ?, ?, ?, ?, ?)',
+                    [msgId, chanId, userId, type, header, partyTime]
                 );
                 const partyDbId = result.lastID;
 

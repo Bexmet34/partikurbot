@@ -6,7 +6,7 @@ const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
 const { createProgressBar } = require('../utils/generalUtils');
 const { getGuildConfig } = require('../services/guildConfig');
-const { createHelpEmbed, createDonateEmbed } = require('../builders/embedBuilder');
+const { createHelpEmbed, createDonateEmbed, createPartikurEmbed, addFooterFields, buildRolesValue, parseEmbedData } = require('../builders/embedBuilder');
 const db = require('../services/db');
 const { t } = require('../services/i18n');
 
@@ -130,29 +130,12 @@ async function handlePartyButtons(interaction) {
         const userId = interaction.user.id;
 
         // Parse existing data
-        const fields = oldEmbed.fields;
-        const genelBilgiler = fields.find(f => f.name === 'Genel Bilgiler')?.value || '';
-        const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
-
-        // Extract Owner ID from leader mention in Genel Bilgiler
-        const ownerMatch = genelBilgiler.match(/<@(\d+)>/);
-        const ownerId = ownerMatch ? ownerMatch[1] : null;
-
-        // Extract Location and Description
-        const placeMatch = genelBilgiler.match(/Çıkış Yeri: (.*)\nAçıklama: (.*)/);
-        const content = placeMatch ? placeMatch[1] : '';
-        const description = placeMatch ? placeMatch[2] : '';
-
-        // Parse Roles from consolidated field
-        const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
-        let rolesWithMembers = [];
-        let match;
-        while ((match = roleRegex.exec(rollerValue)) !== null) {
-            rolesWithMembers.push({
-                role: match[1],
-                userId: match[2] || null
-            });
-        }
+        const data = parseEmbedData(message.embeds[0], lang);
+        let rolesWithMembers = data.rolesWithMembers;
+        const ownerId = data.ownerId;
+        const content = data.content;
+        const partyTime = data.partyTime;
+        const description = data.description;
 
         const isUserInAnySlot = rolesWithMembers.some(r => r.userId === userId);
 
@@ -185,11 +168,10 @@ async function handlePartyButtons(interaction) {
         }
 
         // Reconstruct Embed
-        const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
         const filledCount = rolesWithMembers.filter(r => r.userId).length;
         const totalCount = rolesWithMembers.length;
 
-        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId);
+        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId, partyTime);
         newEmbed.addFields({
             name: 'Roller',
             value: buildRolesValue(rolesWithMembers, lang),
@@ -218,6 +200,122 @@ async function handlePartyButtons(interaction) {
         await interaction.update({ embeds: [newEmbed], components: newComponents });
     }
 
+    // --- SETTINGS BUTTON HANDLERS ---
+
+    if (customId.startsWith('open_settings_')) {
+        await handleOpenSettings(interaction, lang);
+    }
+
+    if (customId.startsWith('settings_edit_')) {
+        const { handleEditOption } = require('./menuHandler');
+        await handleEditOption(interaction, lang);
+    }
+
+    if (customId.startsWith('settings_kick_')) {
+        const { handleManageMembersOption } = require('./menuHandler');
+        await handleManageMembersOption(interaction, lang);
+    }
+
+    if (customId.startsWith('settings_add_member_')) {
+        await handleAddMemberButton(interaction, lang);
+    }
+
+    if (customId.startsWith('settings_close_')) {
+        const { handleCloseOption } = require('./menuHandler');
+        const partyMsgId = customId.split('_')[2];
+        const partyMessage = await interaction.channel.messages.fetch(partyMsgId);
+        const ownerMention = partyMessage.embeds[0].fields.find(f => f.name === 'Genel Bilgiler')?.value.match(/<@(\d+)>/)[1];
+        await handleCloseOption(interaction, ownerMention, lang);
+    }
+
+}
+
+/**
+ * Handles "Ayar" button click
+ */
+async function handleOpenSettings(interaction, lang) {
+    const ownerId = interaction.customId.split('_')[2];
+
+    if (interaction.user.id !== ownerId) {
+        return await interaction.reply({
+            content: `⛔ **${t('common.only_owner_can_close', lang)}**`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const embed = new EmbedBuilder()
+        .setTitle(`⚙️ ${t('manage.settings_title', lang)}`)
+        .setDescription(t('manage.settings_desc', lang))
+        .setColor('#2F3136');
+
+    const row1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`settings_edit_${interaction.message.id}`).setLabel(t('manage.edit_party', lang)).setStyle(ButtonStyle.Primary).setEmoji('📝'),
+        new ButtonBuilder().setCustomId(`settings_add_member_${interaction.message.id}`).setLabel(t('manage.add_member', lang)).setStyle(ButtonStyle.Success).setEmoji('➕'),
+        new ButtonBuilder().setCustomId(`settings_kick_${interaction.message.id}`).setLabel(t('manage.manage_members', lang)).setStyle(ButtonStyle.Danger).setEmoji('👥')
+    );
+
+    const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`settings_close_${interaction.message.id}`).setLabel(t('manage.close_party', lang)).setStyle(ButtonStyle.Danger).setEmoji('🔒')
+    );
+
+    await interaction.reply({
+        embeds: [embed],
+        components: [row1, row2],
+        flags: [MessageFlags.Ephemeral]
+    });
+}
+
+/**
+ * Handles "Add Member" button click
+ */
+async function handleAddMemberButton(interaction, lang) {
+    const messageId = interaction.customId.split('_')[3];
+    const message = await interaction.channel.messages.fetch(messageId);
+    if (!message) return;
+
+    const fields = message.embeds[0].fields;
+    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+
+    // Parse Roles to find empty ones
+    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+    let roles = [];
+    let match;
+    let counter = 0;
+    while ((match = roleRegex.exec(rollerValue)) !== null) {
+        roles.push({
+            name: match[1],
+            isFull: !!match[2],
+            index: counter++
+        });
+    }
+
+    const emptyRoles = roles.filter(r => !r.isFull);
+
+    if (emptyRoles.length === 0) {
+        return await interaction.reply({
+            content: `❌ ${t('manage.no_empty_roles', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`add_member_select_${messageId}`)
+        .setPlaceholder(t('manage.select_role_to_add', lang))
+        .addOptions(
+            emptyRoles.map((r) =>
+                new StringSelectMenuOptionBuilder()
+                    .setLabel(`${r.index + 1}. ${r.name}`)
+                    .setValue(`${r.index}`)
+            )
+        );
+
+    await interaction.reply({
+        content: t('manage.select_role_to_add', lang),
+        components: [new ActionRowBuilder().addComponents(selectMenu)],
+        flags: [MessageFlags.Ephemeral]
+    });
 }
 
 module.exports = {

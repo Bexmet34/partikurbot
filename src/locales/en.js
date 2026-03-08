@@ -87,7 +87,27 @@ module.exports = {
         party_roles_label: 'Roles',
         party_roles_placeholder: 'Tank\nHeal\nDPS\n(One role per line)',
         party_desc_label: 'Party Description / Notes',
-        party_desc_placeholder: 'e.g., T6-7 gears. We will go to Quality 4+ maps.'
+        party_desc_placeholder: 'e.g., T6-7 gears. We will go to Quality 4+ maps.',
+        party_time: 'Party Time',
+        party_time_label: 'Event Time (Numbers Only)',
+        party_time_placeholder: 'e.g., 2130',
+        party_leader: 'Party Leader',
+        party_description: 'Description'
+    },
+    manage: {
+        settings_title: 'Party Settings',
+        settings_desc: 'Use the options below to manage your party.',
+        add_member: 'Add Member',
+        edit_party: 'Edit Party',
+        manage_members: 'Remove Member',
+        close_party: 'Close Party',
+        select_role_to_add: 'Select the role you want to add a user to:',
+        add_member_modal_title: 'Add Member',
+        user_id_label: 'Search or Select User',
+        user_id_placeholder: 'Select a user...',
+        member_added: 'Member added successfully.',
+        invalid_user: 'Invalid User ID or mention.',
+        no_empty_roles: 'No empty roles available.',
     },
 
     stats: {

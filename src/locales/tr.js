@@ -18,12 +18,12 @@ module.exports = {
         not_set: 'Ayarlanmamış',
         success: 'Başarılı',
         owner_only: 'Bu komutu sadece bot sahibi kullanabilir.',
+        party_closed_label: 'BU BAŞVURU KAPANDI',
+        only_owner_can_close: 'Bu partiyi sadece kuran kişi kapatabilir!',
         waiting: 'Bekliyor',
         joined: 'Katıldı',
         leave: 'Ayrıl',
         close_party: 'Partiyi Kapat',
-        party_closed_label: 'BU BAŞVURU KAPANDI',
-        only_owner_can_close: 'Bu partiyi sadece kuran kişi kapatabilir!',
         config_required: 'Bot henüz bu sunucu için yapılandırılmamış!',
         config_instruction: 'Komutları kullanabilmek için önce bir yönetici tarafından `/settings` komutu ile sunucu bilgilerinin sisteme kaydedilmesi gerekmektedir.'
     },
@@ -87,7 +87,27 @@ module.exports = {
         party_roles_label: 'Roller',
         party_roles_placeholder: 'Tank\nHeal\nDPS\n(Her satıra bir rol)',
         party_desc_label: 'Parti Açıklaması',
-        party_desc_placeholder: 'Örn: T6-7 ayar. Kalite 4 ve üzeri haritalara gidicez.'
+        party_desc_placeholder: 'Örn: T6-7 ayar. Kalite 4 ve üzeri haritalara gidicez.',
+        party_time: 'Parti Saati',
+        party_time_label: 'Etkinlik Saati (Sadece Sayı)',
+        party_time_placeholder: 'Örn: 2130',
+        party_leader: 'Parti Lideri',
+        party_description: 'Açıklama'
+    },
+    manage: {
+        settings_title: 'Parti Ayarları',
+        settings_desc: 'Partinizi yönetmek için aşağıdaki seçenekleri kullanın.',
+        add_member: 'Kullanıcı Ekle',
+        edit_party: 'Partiyi Düzenle',
+        manage_members: 'Kullanıcı Çıkar',
+        close_party: 'Partiyi Kapat',
+        select_role_to_add: 'Kullanıcı eklemek istediğiniz rolü seçin:',
+        add_member_modal_title: 'Kullanıcı Ekle',
+        user_id_label: 'Kullanıcı Ara veya Seç',
+        user_id_placeholder: 'Kullanıcı seçiniz...',
+        member_added: 'Kullanıcı başarıyla eklendi.',
+        invalid_user: 'Geçersiz kullanıcı ID veya etiket.',
+        no_empty_roles: 'Eklenecek boş rol bulunmuyor.',
     },
 
     stats: {
