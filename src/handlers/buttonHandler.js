@@ -1,6 +1,6 @@
 const { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { EMPTY_SLOT } = require('../constants/constants');
-const { updateButtonStates, createClosedButton } = require('../builders/componentBuilder');
+const { updateButtonStates, createClosedButton, createCustomPartyComponents, isSelectMenuMode } = require('../builders/componentBuilder');
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
@@ -52,10 +52,8 @@ async function handlePartyButtons(interaction) {
 
 
 
-
     if (customId.startsWith('close_party_')) {
         const ownerId = customId.split('_')[2];
-        // console.log(`[ButtonHandler] Close request from ${interaction.user.tag} for party owned by ${ownerId}`);
 
         if (interaction.user.id !== ownerId) {
             return await interaction.reply({
@@ -79,8 +77,6 @@ async function handlePartyButtons(interaction) {
 
         // Remove from active parties
         removeActiveParty(ownerId, message.id);
-
-        // console.log(`[ButtonHandler] ✅ Party ${message.id} closed by owner.`);
 
 
         const response = await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
@@ -148,7 +144,6 @@ async function handlePartyButtons(interaction) {
         const description = placeMatch ? placeMatch[2] : '';
 
         // Parse Roles from consolidated field
-        // Format: (🔴|🟡) **RoleName:** (<@ID>|" ")
         const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
         let rolesWithMembers = [];
         let match;
@@ -202,11 +197,23 @@ async function handlePartyButtons(interaction) {
         });
         addFooterFields(newEmbed, filledCount, totalCount, lang);
 
-        // Update components (DOLU status)
-        const newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
-            name: r.role,
-            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-        })));
+        // Update components — select menu mode or button mode
+        let newComponents;
+        if (isSelectMenuMode(rolesWithMembers.length)) {
+            // Select menu mode: regenerate components with updated member state
+            newComponents = createCustomPartyComponents(
+                rolesWithMembers.map(r => r.role),
+                ownerId,
+                lang,
+                rolesWithMembers
+            );
+        } else {
+            // Button mode: update existing button states
+            newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
+                name: r.role,
+                value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
+            })));
+        }
 
         await interaction.update({ embeds: [newEmbed], components: newComponents });
     }

@@ -2,7 +2,7 @@ const { MessageFlags, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputSty
 const { t } = require('../services/i18n');
 const { getGuildConfig } = require('../services/guildConfig');
 const { removeActiveParty } = require('../services/partyManager');
-const { createClosedButton } = require('../builders/componentBuilder');
+const { createClosedButton, createCustomPartyComponents, isSelectMenuMode } = require('../builders/componentBuilder');
 const db = require('../services/db');
 const { EMPTY_SLOT } = require('../constants/constants');
 
@@ -200,11 +200,18 @@ async function handleEditModal(interaction) {
     });
     addFooterFields(embed, filledCount, totalCount, lang);
 
-    const components = createCustomPartyComponents(newRolesList, ownerId, lang);
-    const finalComponents = updateButtonStates(components, rolesWithMembers.map(r => ({
-        name: r.role,
-        value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-    })));
+    // Select menu mode or button mode
+    let finalComponents;
+    if (isSelectMenuMode(newRolesList.length)) {
+        finalComponents = createCustomPartyComponents(newRolesList, ownerId, lang, rolesWithMembers);
+    } else {
+        const { updateButtonStates } = require('../builders/componentBuilder');
+        const components = createCustomPartyComponents(newRolesList, ownerId, lang);
+        finalComponents = updateButtonStates(components, rolesWithMembers.map(r => ({
+            name: r.role,
+            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
+        })));
+    }
 
     await message.edit({ embeds: [embed], components: finalComponents });
     await interaction.reply({ content: lang === 'tr' ? '✅ Parti başarıyla güncellendi.' : '✅ Party updated successfully.', flags: [MessageFlags.Ephemeral] });
@@ -259,18 +266,125 @@ async function handleKickMember(interaction) {
     });
     addFooterFields(embed, filledCount, totalCount, lang);
 
-    const newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
-        name: r.role,
-        value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-    })));
+    // Select menu mode or button mode
+    let newComponents;
+    if (isSelectMenuMode(rolesWithMembers.length)) {
+        newComponents = createCustomPartyComponents(
+            rolesWithMembers.map(r => r.role),
+            ownerId,
+            lang,
+            rolesWithMembers
+        );
+    } else {
+        newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
+            name: r.role,
+            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
+        })));
+    }
 
     await message.edit({ embeds: [embed], components: newComponents });
     await interaction.update({ content: lang === 'tr' ? '✅ Kullanıcı çıkarıldı.' : '✅ Member removed.', components: [], flags: [MessageFlags.Ephemeral] });
 }
 
+/**
+ * Handles role selection from the join role select menu (for parties with >7 roles)
+ */
+async function handleJoinRoleSelect(interaction) {
+    if (!interaction.isStringSelectMenu()) return;
+
+    const message = interaction.message;
+    if (!message.embeds[0]) return;
+
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+    const guildName = guildConfig?.guild_name || 'Albion';
+
+    const userId = interaction.user.id;
+    const selectedIndex = parseInt(interaction.values[0]);
+
+    const oldEmbed = message.embeds[0];
+    const fields = oldEmbed.fields;
+    const genelBilgiler = fields.find(f => f.name === 'Genel Bilgiler')?.value || '';
+    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+
+    // Extract Owner ID
+    const ownerMatch = genelBilgiler.match(/<@(\d+)>/);
+    const ownerId = ownerMatch ? ownerMatch[1] : null;
+
+    // Extract Location and Description
+    const placeMatch = genelBilgiler.match(/Çıkış Yeri: (.*)\nAçıklama: (.*)/);
+    const content = placeMatch ? placeMatch[1] : '';
+    const description = placeMatch ? placeMatch[2] : '';
+
+    // Parse Roles
+    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+    let rolesWithMembers = [];
+    let match;
+    while ((match = roleRegex.exec(rollerValue)) !== null) {
+        rolesWithMembers.push({
+            role: match[1],
+            userId: match[2] || null
+        });
+    }
+
+    // Check if selected slot exists
+    if (selectedIndex < 0 || selectedIndex >= rolesWithMembers.length) {
+        return await interaction.reply({
+            content: `❌ ${t('common.error', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    // Check if the selected slot is already filled
+    if (rolesWithMembers[selectedIndex].userId && rolesWithMembers[selectedIndex].userId !== userId) {
+        return await interaction.reply({
+            content: lang === 'tr' ? '❌ Bu rol zaten dolu!' : '❌ This role is already full!',
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
+    const isUserInAnySlot = rolesWithMembers.some(r => r.userId === userId);
+
+    // Remove from old slot if switching
+    if (isUserInAnySlot) {
+        rolesWithMembers = rolesWithMembers.map(r => r.userId === userId ? { ...r, userId: null } : r);
+    }
+
+    // Join the new slot
+    rolesWithMembers[selectedIndex].userId = userId;
+
+    // DB update
+    const roleName = rolesWithMembers[selectedIndex].role;
+    db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?',
+        [userId, roleName, message.id]).catch(e => console.error(e));
+
+    // Reconstruct Embed
+    const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
+    const filledCount = rolesWithMembers.filter(r => r.userId).length;
+    const totalCount = rolesWithMembers.length;
+
+    const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId);
+    newEmbed.addFields({
+        name: 'Roller',
+        value: buildRolesValue(rolesWithMembers, lang),
+        inline: true
+    });
+    addFooterFields(newEmbed, filledCount, totalCount, lang);
+
+    // Regenerate select menu components with updated member state
+    const newComponents = createCustomPartyComponents(
+        rolesWithMembers.map(r => r.role),
+        ownerId,
+        lang,
+        rolesWithMembers
+    );
+
+    await interaction.update({ embeds: [newEmbed], components: newComponents });
+}
+
 module.exports = {
     handleManageMenu,
     handleEditModal,
-    handleKickMember
+    handleKickMember,
+    handleJoinRoleSelect
 };
-

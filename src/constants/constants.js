@@ -1,6 +1,9 @@
 // Slot and Party Constants
 const EMPTY_SLOT = '-';
 
+// If role count exceeds this, use a select menu instead of buttons
+const SELECT_MENU_THRESHOLD = 7;
+
 // Default Content
 const DEFAULT_CONTENT = "STATİK RAT\nTRACKİNG BİZİM MAP\nGRUP CAMP BOSS LAIRY\nKRİSTAL";
 
@@ -39,6 +42,7 @@ const ROLE_ICONS = {
 
 module.exports = {
     EMPTY_SLOT,
+    SELECT_MENU_THRESHOLD,
     DEFAULT_CONTENT,
     getNotlarMetni,
     ROLE_ICONS

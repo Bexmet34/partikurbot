@@ -45,9 +45,8 @@ async function handlePartiModal(interaction) {
         // CREATE PAYLOAD
         const { buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
         const embed = createPartikurEmbed(header, rolesList, description, content, 0, guildName, lang, userId);
-        const components = createCustomPartyComponents(rolesList, userId, lang);
-
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
+        const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
         embed.addFields({
             name: 'Roller',
             value: buildRolesValue(rolesWithMembers, lang),

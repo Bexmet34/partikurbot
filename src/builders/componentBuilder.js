@@ -1,5 +1,5 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
-const { EMPTY_SLOT, ROLE_ICONS } = require('../constants/constants');
+const { EMPTY_SLOT, ROLE_ICONS, SELECT_MENU_THRESHOLD } = require('../constants/constants');
 const { t } = require('../services/i18n');
 
 
@@ -28,18 +28,91 @@ function createPveButtons(ownerId, lang = 'tr') {
 }
 
 /**
- * Creates custom party buttons based on roles
+ * Creates custom party components — buttons (≤7 roles) or select menu (>7 roles)
+ * @param {string[]} rolesList - List of role names
+ * @param {string} ownerId - Party owner's Discord ID
+ * @param {string} lang - Language code
+ * @param {Array|null} rolesWithMembers - Array of {role, userId} objects (for select menu mode state)
  */
-function createCustomPartyComponents(rolesList, ownerId, lang = 'tr') {
+function createCustomPartyComponents(rolesList, ownerId, lang = 'tr', rolesWithMembers = null) {
+    if (rolesList.length > SELECT_MENU_THRESHOLD) {
+        return createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers);
+    }
+    return createButtonPartyComponents(rolesList, ownerId, lang);
+}
+
+/**
+ * Creates SELECT MENU based party components for parties with >7 roles.
+ * Layout: Row 1 = Join Role Select | Row 2 = Leave Button | Row 3 = Management Menu
+ * Total: 3 rows (well within 5-row limit)
+ */
+function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers) {
+    const rows = [];
+
+    // --- Row 1: Join role select menu ---
+    const joinMenu = new StringSelectMenuBuilder()
+        .setCustomId(`join_role_${ownerId}`)
+        .setPlaceholder(lang === 'tr' ? '🎮 Bir rol seçerek katıl' : '🎮 Select a role to join');
+
+    rolesList.forEach((role, index) => {
+        const member = rolesWithMembers ? rolesWithMembers[index] : null;
+        const isFull = member && member.userId != null;
+
+        let label = role;
+        if (label.length > 90) label = label.substring(0, 87) + '...';
+
+        const option = new StringSelectMenuOptionBuilder()
+            .setLabel(`${index + 1}. ${label}`)
+            .setValue(`${index}`)
+            .setEmoji(isFull ? '🔴' : '🟢');
+
+        if (isFull) {
+            option.setDescription(lang === 'tr' ? 'Dolu' : 'Full');
+        } else {
+            option.setDescription(lang === 'tr' ? 'Boş - Katılmak için seç' : 'Available - Select to join');
+        }
+
+        joinMenu.addOptions(option);
+    });
+
+    rows.push(new ActionRowBuilder().addComponents(joinMenu));
+
+    // --- Row 2: Leave button ---
+    rows.push(new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('leave')
+            .setLabel(t('common.leave', lang))
+            .setStyle(ButtonStyle.Secondary)
+    ));
+
+    // --- Row 3: Management menu ---
+    rows.push(new ActionRowBuilder().addComponents(createManageMenu(ownerId, lang)));
+
+    return rows; // Always 3 rows
+}
+
+/**
+ * Creates BUTTON based party components for parties with ≤7 roles.
+ * Discord max 5 Action Rows: up to 3 rows buttons + 1 leave row + 1 management menu
+ */
+function createButtonPartyComponents(rolesList, ownerId, lang) {
+    const MAX_TOTAL_ROWS = 5;
+    const RESERVED_ROWS = 1; // 1 for management menu
+
     const rows = [];
     let currentRow = new ActionRowBuilder();
+    const maxRoleRows = MAX_TOTAL_ROWS - RESERVED_ROWS - 1; // 3
 
     rolesList.forEach((role, index) => {
         if (currentRow.components.length === 5) {
-            rows.push(currentRow);
-            currentRow = new ActionRowBuilder();
+            if (rows.length < maxRoleRows) {
+                rows.push(currentRow);
+                currentRow = new ActionRowBuilder();
+            } else {
+                return;
+            }
         }
-        if (rows.length < 4) {
+        if (rows.length < maxRoleRows) {
             let label = role;
             if (label.length > 80) label = label.substring(0, 77) + "...";
             currentRow.addComponents(
@@ -55,16 +128,38 @@ function createCustomPartyComponents(rolesList, ownerId, lang = 'tr') {
 
     const leaveBtn = new ButtonBuilder().setCustomId('leave').setLabel(t('common.leave', lang)).setStyle(ButtonStyle.Secondary);
 
-    // Add leave button to the roles rows if there's space, or a new row
+    // Merge leave button into last row if there's space
     let lastRow = rows[rows.length - 1];
     if (lastRow && lastRow.components.length < 5) {
         lastRow.addComponents(leaveBtn);
-    } else {
+    } else if (rows.length < MAX_TOTAL_ROWS - RESERVED_ROWS) {
         rows.push(new ActionRowBuilder().addComponents(leaveBtn));
+    } else {
+        // Safety fallback
+        if (lastRow && lastRow.components.length === 5) {
+            const components = lastRow.components.slice(0, 4);
+            const newLastRow = new ActionRowBuilder().addComponents(...components, leaveBtn);
+            rows[rows.length - 1] = newLastRow;
+        }
     }
 
-    // Add Management Menu
-    const manageMenu = new StringSelectMenuBuilder()
+    // Management Menu (last row)
+    rows.push(new ActionRowBuilder().addComponents(createManageMenu(ownerId, lang)));
+
+    // Safety check
+    if (rows.length > 5) {
+        console.warn(`[ComponentBuilder] WARNING: ${rows.length} rows generated, trimming to 5.`);
+        return rows.slice(0, 5);
+    }
+
+    return rows;
+}
+
+/**
+ * Creates the management select menu (shared between button and select menu modes)
+ */
+function createManageMenu(ownerId, lang) {
+    return new StringSelectMenuBuilder()
         .setCustomId(`manage_party_${ownerId}`)
         .setPlaceholder(lang === 'tr' ? '⚙️ Partiyi Yönet' : '⚙️ Manage Party')
         .addOptions(
@@ -84,10 +179,6 @@ function createCustomPartyComponents(rolesList, ownerId, lang = 'tr') {
                 .setValue('close_party')
                 .setEmoji('🔒')
         );
-
-    rows.push(new ActionRowBuilder().addComponents(manageMenu));
-
-    return rows;
 }
 
 /**
@@ -101,7 +192,7 @@ function createClosedButton(lang = 'tr') {
 
 
 /**
- * Updates button states based on field availability
+ * Updates button states based on field availability (for BUTTON mode only)
  */
 function updateButtonStates(oldComponents, newFields) {
     const rows = [];
@@ -169,12 +260,27 @@ function updateButtonStates(oldComponents, newFields) {
         }
         rows.push(newRow);
     }
+
+    // Safety check - Discord hard limit of 5 action rows
+    if (rows.length > 5) {
+        console.warn(`[ComponentBuilder] updateButtonStates: ${rows.length} rows, trimming to 5.`);
+        return rows.slice(0, 5);
+    }
+
     return rows;
+}
+
+/**
+ * Checks if a party uses select menu mode based on role count
+ */
+function isSelectMenuMode(roleCount) {
+    return roleCount > SELECT_MENU_THRESHOLD;
 }
 
 module.exports = {
     createPveButtons,
     createCustomPartyComponents,
     createClosedButton,
-    updateButtonStates
+    updateButtonStates,
+    isSelectMenuMode
 };

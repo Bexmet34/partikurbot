@@ -12,7 +12,7 @@ const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
-const { handleManageMenu, handleEditModal, handleKickMember } = require('./handlers/menuHandler');
+const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { initDb } = require('./services/db');
@@ -167,6 +167,8 @@ client.on('interactionCreate', async interaction => {
         } else if (interaction.isStringSelectMenu()) {
             if (interaction.customId.startsWith('manage_party_')) {
                 await handleManageMenu(interaction);
+            } else if (interaction.customId.startsWith('join_role_')) {
+                await handleJoinRoleSelect(interaction);
             } else if (interaction.customId.startsWith('kick_member_')) {
                 await handleKickMember(interaction);
             } else if (interaction.customId === 'settings_lang_select') {
