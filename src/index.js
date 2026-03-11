@@ -15,6 +15,7 @@ const { handlePartiModal } = require('./handlers/modalHandler');
 const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
+const { handleCezaButton, handleCezaAyarCommand, handleCezaCommand, handleCezaGecmisCommand } = require('./handlers/cezaHandler');
 const { initDb } = require('./services/db');
 const { getGuildConfig } = require('./services/guildConfig');
 const { MessageFlags } = require('discord.js');
@@ -25,16 +26,21 @@ const { t } = require('./services/i18n');
 
 
 // Create Discord client
+const { Partials } = require('discord.js');
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMembers,   // Ceza sistemi: rol/nick işlemleri için
+        GatewayIntentBits.DirectMessages, // Ceza sistemi: DM bildirimleri için
         // MessageContent intent requires enabling in Discord Developer Portal
         // Go to: https://discord.com/developers/applications
         // Select your bot -> Bot -> Privileged Gateway Intents -> Enable "Message Content Intent"
-    ]
+    ],
+    partials: [Partials.Channel], // DM kanallarını almak için gerekli
 });
+
 
 // Error handling to prevent crashes
 client.on('error', async error => {
@@ -122,7 +128,8 @@ client.on('interactionCreate', async interaction => {
             const isConfigured = guildSettings && guildSettings.guild_name && guildSettings.albion_guild_id;
 
             // Allow /settings and /help even if not configured
-            const allowedCommands = ['settings', 'help'];
+            // Ceza komutları kendi DB'sini kullandığından Albion config gerektirmez
+            const allowedCommands = ['settings', 'help', 'ceza', 'ceza-gecmis', 'ceza-ayar'];
             if (!isConfigured && interaction.isChatInputCommand() && !allowedCommands.includes(interaction.commandName)) {
                 return await interaction.reply({
                     content: `⚠️ **${t('common.config_required', lang)}**\n\n${t('common.config_instruction', lang)}`,
@@ -130,10 +137,13 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            // Button and Modal protection (except Help buttons)
+            // Button and Modal protection (except Help buttons and Ceza buttons)
             if (!isConfigured && (interaction.isButton() || interaction.isModalSubmit())) {
-                if (interaction.isButton() && interaction.customId.startsWith('help_page_')) {
-                    // Allow help buttons
+                if (
+                    (interaction.isButton() && interaction.customId.startsWith('help_page_')) ||
+                    (interaction.isButton() && interaction.customId.startsWith('ceza_odendi:'))
+                ) {
+                    // Allow help buttons and ceza_odendi buttons
                 } else {
                     return await interaction.reply({
                         content: `⚠️ **${t('common.error', lang)}:** ${t('common.config_required', lang)}`,
@@ -160,10 +170,19 @@ client.on('interactionCreate', async interaction => {
                 await handleWhitelistRemoveCommand(interaction);
             } else if (interaction.commandName === 'settings') {
                 await handleSettingsCommand(interaction);
+            } else if (interaction.commandName === 'ceza') {
+                await handleCezaCommand(interaction);
+            } else if (interaction.commandName === 'ceza-gecmis') {
+                await handleCezaGecmisCommand(interaction);
+            } else if (interaction.commandName === 'ceza-ayar') {
+                await handleCezaAyarCommand(interaction);
             }
         } else if (interaction.isButton()) {
-
-            await handlePartyButtons(interaction);
+            // Önce ceza butonunu kontrol et
+            const wasCezaButton = await handleCezaButton(interaction, client);
+            if (!wasCezaButton) {
+                await handlePartyButtons(interaction);
+            }
         } else if (interaction.isStringSelectMenu()) {
             if (interaction.customId.startsWith('manage_party_')) {
                 await handleManageMenu(interaction);
