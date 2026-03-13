@@ -12,16 +12,20 @@ function parseEmbedData(embed, lang) {
     const ownerId = infoField.match(/<@(\d+)>/)?.[1] || null;
     
     let description = '';
-    const descLabel = t('party.description', lang);
+    const descLabel = t('party.party_description', lang);
     const descLine = infoField.split('\n').find(l => l.includes('📝'));
     if (descLine) {
         // Find the index of the label and skip it along with the colon/bolding
         const labelIndex = descLine.indexOf(descLabel);
         if (labelIndex !== -1) {
             description = descLine.substring(labelIndex + descLabel.length).replace(/^[:\s*]+/, '').trim();
+            // Clean up any double labels caused by the previous bug
+            while (description.startsWith(descLabel)) {
+                description = description.substring(descLabel.length).replace(/^[:\s*]+/, '').trim();
+            }
         } else {
-            // Fallback: just use icon
-            description = descLine.replace(/📝\s*/, '').trim();
+            // Fallback: remove icon and any bolded label before colon
+            description = descLine.replace(/^📝\s*(\*\*.*?\*\*\s*:\s*)?/, '').trim();
         }
         
         if (description === t('common.not_set', lang) || description === descLabel) {
