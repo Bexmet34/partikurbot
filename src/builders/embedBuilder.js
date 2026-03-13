@@ -14,10 +14,12 @@ function parseEmbedData(embed, lang) {
     let description = '';
     const descLine = infoField.split('\n').find(l => l.includes('📝'));
     if (descLine) {
-        // Split by the icon and optional label/colon/bolding
-        const parts = descLine.split(/📝.*?:?\s*/);
+        // More specific split for description to prevent "Description: Description:" recursion
+        const parts = descLine.split(/📝\s*\*\*.*?\*\*:\s*/);
         description = parts[parts.length - 1] || '';
-        if (description === t('common.not_set', lang)) description = '';
+        if (description === t('party.description', lang) || description === t('common.not_set', lang)) {
+            description = '';
+        }
     }
 
     const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
