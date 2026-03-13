@@ -12,12 +12,19 @@ function parseEmbedData(embed, lang) {
     const ownerId = infoField.match(/<@(\d+)>/)?.[1] || null;
     
     let description = '';
+    const descLabel = t('party.description', lang);
     const descLine = infoField.split('\n').find(l => l.includes('📝'));
     if (descLine) {
-        // More specific split for description to prevent "Description: Description:" recursion
-        const parts = descLine.split(/📝\s*\*\*.*?\*\*:\s*/);
-        description = parts[parts.length - 1] || '';
-        if (description === t('party.description', lang) || description === t('common.not_set', lang)) {
+        // Find the index of the label and skip it along with the colon/bolding
+        const labelIndex = descLine.indexOf(descLabel);
+        if (labelIndex !== -1) {
+            description = descLine.substring(labelIndex + descLabel.length).replace(/^[:\s*]+/, '').trim();
+        } else {
+            // Fallback: just use icon
+            description = descLine.replace(/📝\s*/, '').trim();
+        }
+        
+        if (description === t('common.not_set', lang) || description === descLabel) {
             description = '';
         }
     }
