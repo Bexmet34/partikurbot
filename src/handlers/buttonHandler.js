@@ -173,7 +173,7 @@ async function handlePartyButtons(interaction) {
 
         const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId, partyTime);
         newEmbed.addFields({
-            name: 'Roller',
+            name: '**Roller**',
             value: buildRolesValue(rolesWithMembers, lang),
             inline: true
         });

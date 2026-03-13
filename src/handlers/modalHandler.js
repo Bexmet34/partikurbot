@@ -47,7 +47,7 @@ async function handlePartiModal(interaction) {
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
         const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
         embed.addFields({
-            name: 'Roller',
+            name: '**Roller**',
             value: buildRolesValue(rolesWithMembers, lang),
             inline: true
         });

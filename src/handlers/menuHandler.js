@@ -193,7 +193,7 @@ async function handleEditModal(interaction) {
 
     const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, guildName, lang, ownerId);
     embed.addFields({
-        name: 'Roller',
+        name: '**Roller**',
         value: buildRolesValue(rolesWithMembers, lang),
         inline: true
     });
@@ -245,7 +245,7 @@ async function handleKickMember(interaction) {
 
     const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields({
-        name: 'Roller',
+        name: '**Roller**',
         value: buildRolesValue(rolesWithMembers, lang),
         inline: true
     });
@@ -327,7 +327,7 @@ async function handleJoinRoleSelect(interaction) {
 
     const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     newEmbed.addFields({
-        name: 'Roller',
+        name: '**Roller**',
         value: buildRolesValue(rolesWithMembers, lang),
         inline: true
     });
@@ -406,7 +406,7 @@ async function handleAddMemberUserSelect(interaction) {
 
     const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields({
-        name: 'Roller',
+        name: '**Roller**',
         value: buildRolesValue(rolesWithMembers, lang),
         inline: true
     });
