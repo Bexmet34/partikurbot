@@ -22,7 +22,7 @@ function parseEmbedData(embed, lang) {
     const descMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.party_description', lang)}:\\*\\* (.*)`));
     const description = descMatch ? descMatch[1] : '';
 
-    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\*(?: <@(\d+)>|)/g;
     let rolesWithMembers = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {
@@ -101,7 +101,7 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
     const descText = description || t('common.not_set', lang);
 
     embed.addFields({
-        name: 'Genel Bilgiler',
+        name: '',
         value: `👑 **${t('party.party_leader', lang)}:** ${leaderText}\n📝 **${t('party.party_description', lang)}:** ${descText}`
     });
 
@@ -219,7 +219,7 @@ function createDonateEmbed(lang = 'tr') {
 function buildRolesValue(rolesWithMembers, lang = 'tr') {
     return rolesWithMembers.map(item => {
         const emoji = item.userId ? '🔴' : '🟡';
-        const mention = item.userId ? `<@${item.userId}>` : '" "';
+        const mention = item.userId ? `<@${item.userId}>` : '';
         return `${emoji} **${item.role}:** ${mention}`;
     }).join('\n');
 }
