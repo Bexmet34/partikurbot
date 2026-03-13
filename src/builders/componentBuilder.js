@@ -31,10 +31,7 @@ function createPveButtons(ownerId, lang = 'tr') {
  * @param {Array|null} rolesWithMembers - Array of {role, userId} objects (for select menu mode state)
  */
 function createCustomPartyComponents(rolesList, ownerId, lang = 'tr', rolesWithMembers = null) {
-    if (rolesList.length > SELECT_MENU_THRESHOLD) {
-        return createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers);
-    }
-    return createButtonPartyComponents(rolesList, ownerId, lang);
+    return createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers);
 }
 
 /**
@@ -73,18 +70,16 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
 
     rows.push(new ActionRowBuilder().addComponents(joinMenu));
 
-    // --- Row 2: Leave button ---
+    // --- Row 2: Management menu & Leave button ---
     rows.push(new ActionRowBuilder().addComponents(
+        createManageMenu(ownerId, lang),
         new ButtonBuilder()
             .setCustomId('leave')
             .setLabel(t('common.leave', lang))
             .setStyle(ButtonStyle.Secondary)
     ));
 
-    // --- Row 3: Management menu ---
-    rows.push(new ActionRowBuilder().addComponents(createManageMenu(ownerId, lang)));
-
-    return rows; // Always 3 rows
+    return rows; // Always 2 rows
 }
 
 /**
@@ -254,7 +249,7 @@ function updateButtonStates(oldComponents, newFields) {
  * Checks if a party uses select menu mode based on role count
  */
 function isSelectMenuMode(roleCount) {
-    return roleCount > SELECT_MENU_THRESHOLD;
+    return true;
 }
 
 module.exports = {

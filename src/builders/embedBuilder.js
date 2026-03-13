@@ -89,7 +89,7 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null, partyTime = null) {
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
     const sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
 
     const embed = new EmbedBuilder()
@@ -100,18 +100,9 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
     const placeText = content || t('common.not_set', lang);
     const descText = description || t('common.not_set', lang);
 
-    let timeText = t('common.not_set', lang);
-    if (partyTime) {
-        if (partyTime.length === 4 && /^\d+$/.test(partyTime)) {
-            timeText = `${partyTime.substring(0, 2)}:${partyTime.substring(2, 4)}`;
-        } else {
-            timeText = partyTime;
-        }
-    }
-
     embed.addFields({
         name: 'Genel Bilgiler',
-        value: `**${t('party.party_leader', lang)}:** ${leaderText}\n**${t('party.location', lang)}:** ${placeText}\n**${t('party.party_time', lang)}:** ${timeText}\n**${t('party.party_description', lang)}:** ${descText}`
+        value: `👑 **${t('party.party_leader', lang)}:** ${leaderText}\n📝 **${t('party.party_description', lang)}:** ${descText}`
     });
 
     // The 'Roller' field will be added in handlePartiModal or buttonHandler

@@ -87,21 +87,6 @@ async function handleEditOption(interaction, lang) {
         .setStyle(TextInputStyle.Short)
         .setRequired(true);
 
-    const contentInput = new TextInputBuilder()
-        .setCustomId('party_content')
-        .setLabel(lang === 'tr' ? 'Çıkış Yeri' : 'Exit Location')
-        .setValue(data.content)
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
-
-    const timeInput = new TextInputBuilder()
-        .setCustomId('party_time')
-        .setLabel(t('party.party_time_label', lang))
-        .setValue(data.partyTime)
-        .setStyle(TextInputStyle.Short)
-        .setMinLength(4)
-        .setMaxLength(4)
-        .setRequired(true);
 
     const rolesInput = new TextInputBuilder()
         .setCustomId('party_roles')
@@ -119,8 +104,6 @@ async function handleEditOption(interaction, lang) {
 
     modal.addComponents(
         new ActionRowBuilder().addComponents(headerInput),
-        new ActionRowBuilder().addComponents(contentInput),
-        new ActionRowBuilder().addComponents(timeInput),
         new ActionRowBuilder().addComponents(descriptionInput),
         new ActionRowBuilder().addComponents(rolesInput)
     );
@@ -184,18 +167,8 @@ async function handleEditModal(interaction) {
     const guildName = guildConfig?.guild_name || 'Albion';
 
     const header = interaction.fields.getTextInputValue('party_header');
-    const content = interaction.fields.getTextInputValue('party_content');
-    const partyTime = interaction.fields.getTextInputValue('party_time');
     const rolesRaw = interaction.fields.getTextInputValue('party_roles');
     const description = interaction.fields.getTextInputValue('party_description') || '';
-
-    // Validate partyTime (numeric only)
-    if (!/^\d+$/.test(partyTime)) {
-        return await interaction.reply({
-            content: `❌ **${t('common.error', lang)}:** ${t('party.party_time_label', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
 
     // Parse existing data with members to preserve them
     const oldData = parseEmbedData(message.embeds[0], lang);
@@ -218,7 +191,7 @@ async function handleEditModal(interaction) {
 
     const ownerId = oldData.ownerId;
 
-    const embed = createPartikurEmbed(header, newRolesList, description, content, filledCount, guildName, lang, ownerId, partyTime);
+    const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, guildName, lang, ownerId);
     embed.addFields({
         name: 'Roller',
         value: buildRolesValue(rolesWithMembers, lang),
@@ -227,7 +200,7 @@ async function handleEditModal(interaction) {
     addFooterFields(embed, filledCount, totalCount, lang);
 
     // Update DB
-    db.run('UPDATE parties SET title = ?, party_time = ? WHERE message_id = ?', [header, partyTime, originalMsgId]).catch(e => console.error(e));
+    db.run('UPDATE parties SET title = ? WHERE message_id = ?', [header, originalMsgId]).catch(e => console.error(e));
 
     // Select menu mode or button mode
     let finalComponents;
@@ -270,7 +243,7 @@ async function handleKickMember(interaction) {
     const filledCount = rolesWithMembers.filter(r => r.userId).length;
     const totalCount = rolesWithMembers.length;
 
-    const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, data.content, filledCount, guildName, lang, data.ownerId, data.partyTime);
+    const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields({
         name: 'Roller',
         value: buildRolesValue(rolesWithMembers, lang),
@@ -352,7 +325,7 @@ async function handleJoinRoleSelect(interaction) {
     const filledCount = rolesWithMembers.filter(r => r.userId).length;
     const totalCount = rolesWithMembers.length;
 
-    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, data.content, filledCount, guildName, lang, data.ownerId, data.partyTime);
+    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     newEmbed.addFields({
         name: 'Roller',
         value: buildRolesValue(rolesWithMembers, lang),
@@ -431,7 +404,7 @@ async function handleAddMemberUserSelect(interaction) {
     const filledCount = rolesWithMembers.filter(r => r.userId).length;
     const totalCount = rolesWithMembers.length;
 
-    const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, data.content, filledCount, guildName, lang, data.ownerId, data.partyTime);
+    const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields({
         name: 'Roller',
         value: buildRolesValue(rolesWithMembers, lang),
