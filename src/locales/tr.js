@@ -20,6 +20,8 @@ module.exports = {
         owner_only: 'Bu komutu sadece bot sahibi kullanabilir.',
         party_closed_label: 'BU BAŞVURU KAPANDI',
         only_owner_can_close: 'Bu partiyi sadece kuran kişi kapatabilir!',
+        only_leader_can_manage: 'Ayarları sadece parti lideri kullanabilir!',
+        only_leader_can_close: 'Partiyi sadece kuran kişi kapatabilir!',
         waiting: 'Bekliyor',
         joined: 'Katıldı',
         leave: 'Ayrıl',
