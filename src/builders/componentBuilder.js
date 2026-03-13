@@ -57,7 +57,7 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         const option = new StringSelectMenuOptionBuilder()
             .setLabel(`${index + 1}. ${label}`)
             .setValue(`${index}`)
-            .setEmoji(isFull ? '🔴' : '🟢');
+            .setEmoji(isFull ? '🔴' : '🟡');
 
         if (isFull) {
             option.setDescription(lang === 'tr' ? 'Dolu' : 'Full');
