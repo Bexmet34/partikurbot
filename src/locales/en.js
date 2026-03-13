@@ -24,6 +24,8 @@ module.exports = {
         close_party: 'Close Party',
         party_closed_label: 'THIS APPLICATION IS CLOSED',
         only_owner_can_close: 'Only the creator can close this party!',
+        only_leader_can_manage: 'Only the party leader can use settings!',
+        only_leader_can_close: 'Only the creator can close this party!',
         config_required: 'Bot is not yet configured for this server!',
         config_instruction: 'To use commands, an administrator must first save the server information using the `/settings` command.'
     },

@@ -57,7 +57,7 @@ async function handlePartyButtons(interaction) {
 
         if (interaction.user.id !== ownerId) {
             return await interaction.reply({
-                content: `⛔ **${t('common.only_owner_can_close', lang)}**`,
+                content: `⛔ **${t('common.only_leader_can_close', lang)}**`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
@@ -238,7 +238,7 @@ async function handleOpenSettings(interaction, lang) {
 
     if (interaction.user.id !== ownerId) {
         return await interaction.reply({
-            content: `⛔ **${t('common.only_owner_can_close', lang)}**`,
+            content: `⛔ **${t('common.only_leader_can_manage', lang)}**`,
             flags: [MessageFlags.Ephemeral]
         });
     }
