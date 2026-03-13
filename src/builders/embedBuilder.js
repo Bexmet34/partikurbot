@@ -39,7 +39,7 @@ function parseEmbedData(embed, lang) {
     while ((match = roleRegex.exec(rollerValue)) !== null) {
         rolesWithMembers.push({
             role: match[1],
-            userId: match[2] || null
+            userId: match[3] || null
         });
     }
 
