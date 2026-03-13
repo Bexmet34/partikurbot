@@ -8,8 +8,9 @@ function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
     const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
 
-    const ownerId = embed.description?.match(/👑 \*\*.*?\*\* (<@(\d+)>|)/)?.[2] || null;
-    const description = embed.description?.match(/📝 \*\*.*?\*\* (.*)$/m)?.[1] || '';
+    const infoField = fields.find(f => f.value && f.value.includes('👑'))?.value || '';
+    const ownerId = infoField.match(/👑\s*\*\*.*?\*\*:\s*<@(\d+)>/)?.[1] || null;
+    const description = infoField.match(/📝\s*\*\*.*?\*\*:\s*(.*)$/m)?.[1] || '';
 
     const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
     let rolesWithMembers = [];

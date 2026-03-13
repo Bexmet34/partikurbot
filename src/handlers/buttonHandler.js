@@ -224,7 +224,7 @@ async function handlePartyButtons(interaction) {
         const { handleCloseOption } = require('./menuHandler');
         const partyMsgId = customId.split('_')[2];
         const partyMessage = await interaction.channel.messages.fetch(partyMsgId);
-        const ownerMention = partyMessage.embeds[0].description?.match(/👑 \*\*.*?\*\* (<@(\d+)>|)/)?.[2];
+        const ownerMention = partyMessage.embeds[0].fields.find(f => f.value && f.value.includes('👑'))?.value.match(/👑\s*\*\*.*?\*\*:\s*<@(\d+)>/)?.[1];
         await handleCloseOption(interaction, ownerMention, lang);
     }
 
