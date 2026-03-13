@@ -119,9 +119,9 @@ async function handleManageMembersOption(interaction, lang) {
     }
     if (!message || !message.embeds[0]) return;
     const fields = message.embeds[0].fields;
-    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
 
-    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* <@(\d+)>/g;
+    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*<@(\d+)>/g;
     let members = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {

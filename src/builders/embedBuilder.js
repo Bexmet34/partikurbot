@@ -6,23 +6,12 @@ const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
 function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
-    const genelBilgiler = fields.find(f => f.name === 'Genel Bilgiler')?.value || '';
-    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
 
-    const ownerMatch = genelBilgiler.match(/<@(\d+)>/);
-    const ownerId = ownerMatch ? ownerMatch[1] : null;
+    const ownerId = embed.description?.match(/👑 \*\*.*?\*\* (<@(\d+)>|)/)?.[2] || null;
+    const description = embed.description?.match(/📝 \*\*.*?\*\* (.*)$/m)?.[1] || '';
 
-    const placeMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.location', lang)}:\\*\\* (.*)`));
-    const content = placeMatch ? placeMatch[1].split('\n')[0] : '';
-
-    const timeMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.party_time', lang)}:\\*\\* (.*)`));
-    const rawTime = timeMatch ? timeMatch[1].split('\n')[0] : '';
-    const partyTime = rawTime.replace(':', '').trim();
-
-    const descMatch = genelBilgiler.match(new RegExp(`\\*\\*${t('party.party_description', lang)}:\\*\\* (.*)`));
-    const description = descMatch ? descMatch[1] : '';
-
-    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\*(?: <@(\d+)>|)/g;
+    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
     let rolesWithMembers = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {
@@ -35,8 +24,8 @@ function parseEmbedData(embed, lang) {
     return {
         title: embed.title,
         ownerId,
-        content,
-        partyTime,
+        content: '',
+        partyTime: '',
         description,
         rolesWithMembers
     };

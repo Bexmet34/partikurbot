@@ -224,7 +224,7 @@ async function handlePartyButtons(interaction) {
         const { handleCloseOption } = require('./menuHandler');
         const partyMsgId = customId.split('_')[2];
         const partyMessage = await interaction.channel.messages.fetch(partyMsgId);
-        const ownerMention = partyMessage.embeds[0].fields.find(f => f.name === 'Genel Bilgiler')?.value.match(/<@(\d+)>/)[1];
+        const ownerMention = partyMessage.embeds[0].description?.match(/👑 \*\*.*?\*\* (<@(\d+)>|)/)?.[2];
         await handleCloseOption(interaction, ownerMention, lang);
     }
 
@@ -274,10 +274,10 @@ async function handleAddMemberButton(interaction, lang) {
     if (!message) return;
 
     const fields = message.embeds[0].fields;
-    const rollerValue = fields.find(f => f.name === 'Roller')?.value || '';
+    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
 
     // Parse Roles to find empty ones
-    const roleRegex = /(?:🔴|🟡) \*\*(.*?):\*\* (?:<@(\d+)>|" ")/g;
+    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
     let roles = [];
     let match;
     let counter = 0;
