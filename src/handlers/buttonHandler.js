@@ -34,9 +34,8 @@ async function handlePartyButtons(interaction) {
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(pageIndex === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('help_page_1').setLabel(`📊 ${t('help.page_1', lang)}`).setStyle(pageIndex === 1 ? ButtonStyle.Primary : ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('help_page_2').setLabel(`🛡️ ${t('help.page_2', lang)}`).setStyle(pageIndex === 2 ? ButtonStyle.Primary : ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('help_page_3').setLabel(`🌐 ${t('help.page_3', lang)}`).setStyle(pageIndex === 3 ? ButtonStyle.Primary : ButtonStyle.Secondary)
+            new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(pageIndex === 1 ? ButtonStyle.Primary : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('help_page_2').setLabel(`🚨 ${t('help.page_3', lang)}`).setStyle(pageIndex === 2 ? ButtonStyle.Primary : ButtonStyle.Secondary)
         );
 
         const linkRow = new ActionRowBuilder().addComponents(

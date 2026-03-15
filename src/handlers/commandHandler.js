@@ -25,9 +25,8 @@ async function handleHelpCommand(interaction) {
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId('help_page_1').setLabel(`📊 ${t('help.page_1', lang)}`).setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('help_page_2').setLabel(`🛡️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('help_page_3').setLabel(`🌐 ${t('help.page_3', lang)}`).setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_page_2').setLabel(`🚨 ${t('help.page_3', lang)}`).setStyle(ButtonStyle.Secondary)
     );
 
     // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects

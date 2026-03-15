@@ -145,63 +145,54 @@ function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
  */
 function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
     const embeds = [
-        // Page 0: Overview
+        // Page 0: Overview (General Information)
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | ${t('help.title_general', lang)}`)
-            .setColor('#F1C40F')
-            .setDescription(`**${guildName} Content Bot** ${t('help.desc_general', lang)}\n\n` +
-                `🔹 **${t('common.details', lang)}:** ${t('help.desc_goal', lang)}\n\n` +
-                `🔽 ${t('help.desc_nav', lang)}`)
+            .setTitle(t('help.title_page_0', lang))
+            .setColor(15844367) // #F1C40F
+            .setDescription(t('help.desc_page_0', lang))
+            .setThumbnail('https://i.imgur.com/8Km9tLL.png')
             .addFields(
-                { name: `📄 ${t('common.page', lang)} 1`, value: `📊 ${t('help.page_1', lang)}`, inline: true },
-                { name: `📄 ${t('common.page', lang)} 2`, value: `🛡️ ${t('help.page_2', lang)}`, inline: true },
-                { name: `📄 ${t('common.page', lang)} 3`, value: `🌐 ${t('help.page_3', lang)}`, inline: true }
+                { name: t('help.field_features_title', lang), value: t('help.field_features_value', lang), inline: false },
+                { name: t('help.field_categories_title', lang), value: t('help.field_categories_value', lang), inline: false },
+                { name: t('help.field_nav_title', lang), value: t('help.field_nav_value', lang), inline: false }
             )
-            .setFooter({ text: `${t('common.page', lang)} 1/4 • ${t('help.footer_nav', lang)}` }),
+            .setFooter({ text: t('help.footer_page_0', lang) }),
 
-        // Page 1: Commands
+        // Page 1: Basic & Management Commands
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | ${t('help.title_commands', lang)}`)
-            .setColor('#3498DB')
-            .setDescription(`${t('help.title_commands', lang)}:`)
+            .setTitle(t('help.title_page_1', lang))
+            .setColor(3447003) // #3498DB
+            .setDescription(t('help.desc_page_1', lang))
             .addFields(
-                { name: '🏗️ `/createparty`', value: t('help.cmd_createparty', lang) },
-                { name: '🔍 `/stats [name]`', value: t('help.cmd_stats', lang) },
-                { name: '👥 `/members`', value: t('help.cmd_members', lang) },
-                { name: '⚙️ `/settings`', value: t('help.cmd_settings', lang) },
-                { name: 'ℹ️ `/help`', value: t('help.cmd_help', lang) }
+                { name: '🏗️ /createparty', value: t('help.cmd_createparty', lang), inline: false },
+                { name: 'ℹ️ /help', value: t('help.cmd_help', lang), inline: false },
+                { name: '🔒 /closeparty', value: lang === 'tr' ? 'Aktif partilerinizi manuel olarak kapatmanızı sağlar.' : 'Manually end your active parties.', inline: false },
+                { name: '👥 /members', value: t('help.cmd_members', lang), inline: false },
+                { name: '📊 /stats [name]', value: t('help.cmd_stats', lang), inline: false },
+                { name: '✅ /whitelistadd [user]', value: lang === 'tr' ? 'Bir kullanıcıyı beyaz listeye ekler. **Yönetici yetkisi gerekir.**' : 'Add a user to the whitelist. **Admin permission required.**', inline: false },
+                { name: '❌ /whitelistremove [user]', value: lang === 'tr' ? 'Bir kullanıcıyı beyaz listeden çıkarır. **Yönetici yetkisi gerekir.**' : 'Remove a user from the whitelist. **Admin permission required.**', inline: false },
+                { name: '⚙️ /settings', value: t('help.cmd_settings', lang) + (lang === 'tr' ? ' **Yönetici yetkisi gerekir.**' : ' **Admin permission required.**'), inline: false }
             )
-            .setFooter({ text: `${t('common.page', lang)} 2/4 • ${t('help.footer_commands', lang)}` }),
+            .setFooter({ text: t('help.footer_page_1', lang) }),
 
-        // Page 2: Management & Limits
+        // Page 2: Punishment System Commands
         new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | ${t('help.title_management', lang)}`)
-            .setColor('#E67E22')
-            .setDescription(`${t('help.title_management', lang)}:`)
+            .setTitle(t('help.title_page_2', lang))
+            .setColor(15158332) // #E74C3C
+            .setDescription(t('help.desc_page_2', lang))
             .addFields(
-                { name: `🚫 ${t('help.mgmt_limits_title', lang)}`, value: t('help.mgmt_limits_desc', lang) },
-                { name: `🔑 ${t('help.mgmt_whitelist_title', lang)}`, value: t('help.mgmt_whitelist_desc', lang) },
-                { name: `🧹 ${t('help.mgmt_cleanup_title', lang)}`, value: t('help.mgmt_cleanup_desc', lang) }
+                { name: '📝 /ceza [kullanici] [aciklama] [ucret]', value: lang === 'tr' ? 'Bir kullanıcıya açıklama ve ücret bilgisiyle birlikte ceza tanımlar.' : 'Defines a penalty with description and fee for a user.', inline: false },
+                { name: '📚 /ceza-gecmis [kullanici]', value: lang === 'tr' ? 'Bir kullanıcının geçmişte aldığı cezaları listeler.' : 'Lists previous penalties for a specific user.', inline: false },
+                { name: '🛠️ /ceza-ayar', value: t('help.field_ceza_ayar_value', lang), inline: false },
+                { name: '📢 /ceza-ayar kanal', value: lang === 'tr' ? 'Ceza bildirimlerinin gönderileceği kanalı ayarlar.' : 'Sets the channel for penalty notifications.', inline: true },
+                { name: '🏷️ /ceza-ayar rol', value: lang === 'tr' ? 'Ceza uygulanan kullanıcılara verilecek cezalı rolünü ayarlar.' : 'Sets the penalty role for restricted users.', inline: true },
+                { name: '🛡️ /ceza-ayar yetkili-rol', value: lang === 'tr' ? 'Ceza komutlarını kullanabilecek yetkili rolünü ayarlar.' : 'Sets the role authorized to use penalty commands.', inline: true },
+                { name: '📄 /ceza-ayar goster', value: lang === 'tr' ? 'Mevcut ceza sistemi ayarlarını görüntüler.' : 'Displays current penalty system configuration.', inline: true },
+                { name: t('help.field_note_title', lang), value: t('help.field_note_value', lang), inline: false }
             )
-            .setFooter({ text: `${t('common.page', lang)} 3/4 • ${t('help.footer_limits', lang)}` }),
-
-        // Page 3: Links & Support
-        new EmbedBuilder()
-            .setTitle(`🛡️ ${guildName} | ${t('help.title_links', lang)}`)
-            .setColor('#2ECC71')
-            .setDescription(`${t('help.title_links', lang)}:`)
-            .addFields(
-                { name: '🌐 Web Site', value: '[veyronixbot.vercel.app](https://veyronixbot.vercel.app/)', inline: true },
-                { name: `💬 ${t('help.support_server', lang)}`, value: `[${t('settings.success', lang).includes('successfully') ? 'Join here' : 'Katılmak için tıkla'}](https://discord.gg/RZJE77KEVB)`, inline: true },
-
-                { name: '💎 Developer', value: 'Nyks', inline: true }
-            )
+            .setFooter({ text: t('help.footer_page_2', lang) })
             .setTimestamp()
-            .setFooter({ text: `${t('common.page', lang)} 4/4 • ${t('help.footer_contact', lang)}` })
     ];
-
-
-
 
     return embeds[page] || embeds[0];
 }
