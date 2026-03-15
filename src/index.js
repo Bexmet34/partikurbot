@@ -121,36 +121,12 @@ client.once('clientReady', async (c) => {
 
 client.on('interactionCreate', async interaction => {
     try {
-        // Guild configuration check
         if (interaction.guildId) {
             const guildSettings = await getGuildConfig(interaction.guildId);
             const lang = guildSettings?.language || 'tr';
-            const isConfigured = guildSettings && guildSettings.guild_name && guildSettings.albion_guild_id;
 
-            // Allow /settings and /help even if not configured
-            // Ceza komutları kendi DB'sini kullandığından Albion config gerektirmez
-            const allowedCommands = ['settings', 'help', 'ceza', 'ceza-gecmis', 'ceza-ayar'];
-            if (!isConfigured && interaction.isChatInputCommand() && !allowedCommands.includes(interaction.commandName)) {
-                return await interaction.reply({
-                    content: `⚠️ **${t('common.config_required', lang)}**\n\n${t('common.config_instruction', lang)}`,
-                    flags: [MessageFlags.Ephemeral]
-                });
-            }
-
-            // Button and Modal protection (except Help buttons and Ceza buttons)
-            if (!isConfigured && (interaction.isButton() || interaction.isModalSubmit())) {
-                if (
-                    (interaction.isButton() && interaction.customId.startsWith('help_page_')) ||
-                    (interaction.isButton() && interaction.customId.startsWith('ceza_odendi:'))
-                ) {
-                    // Allow help buttons and ceza_odendi buttons
-                } else {
-                    return await interaction.reply({
-                        content: `⚠️ **${t('common.error', lang)}:** ${t('common.config_required', lang)}`,
-                        flags: [MessageFlags.Ephemeral]
-                    });
-                }
-            }
+            // No longer checking globally for Albion configuration. 
+            // Individual commands will check for their required settings.
         }
 
         if (interaction.isChatInputCommand()) {
