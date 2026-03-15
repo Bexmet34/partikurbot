@@ -174,14 +174,23 @@ async function handleEditModal(interaction) {
     const oldData = parseEmbedData(message.embeds[0], lang);
     const oldMembers = {};
     oldData.rolesWithMembers.forEach(r => {
-        if (r.userId) oldMembers[r.role] = r.userId;
+        if (r.userId) {
+            if (!oldMembers[r.role]) oldMembers[r.role] = [];
+            oldMembers[r.role].push(r.userId);
+        }
     });
 
     const newRolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
-    const rolesWithMembers = newRolesList.map(role => ({
-        role: role,
-        userId: oldMembers[role] || null
-    }));
+    const rolesWithMembers = newRolesList.map(role => {
+        let userId = null;
+        if (oldMembers[role] && oldMembers[role].length > 0) {
+            userId = oldMembers[role].shift();
+        }
+        return {
+            role: role,
+            userId: userId
+        };
+    });
 
     const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents, updateButtonStates } = require('../builders/componentBuilder');
