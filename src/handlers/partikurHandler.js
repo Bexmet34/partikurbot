@@ -21,10 +21,13 @@ async function handleCreatePartyCommand(interaction) {
     const isDeveloper = config.WHITELIST_USERS.includes(userId);
     const whitelisted = isOwner || isDeveloper || await isWhitelisted(userId, interaction.guildId);
 
-    // 1. Top.gg Vote Check (Bypass for whitelisted/owners/devs)
-    if (topggApi && !whitelisted) {
+    // 1. Top.gg Vote Check (Bypass ONLY for Bot Owner/Developer)
+    if (topggApi && !isDeveloper) {
         try {
+            console.log(`[Top.gg] Checking vote for user: ${userId}`);
             const hasVoted = await topggApi.hasVoted(userId);
+            console.log(`[Top.gg] User ${userId} hasVoted: ${hasVoted}`);
+
             if (!hasVoted) {
                 const voteRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
@@ -41,9 +44,9 @@ async function handleCreatePartyCommand(interaction) {
             }
         } catch (error) {
             console.error('[Top.gg] Vote check failed:', error);
-            // In case of API failure, we might want to allow the command or block it. 
-            // Usually letting it through is better for UX, or just log.
         }
+    } else if (!topggApi) {
+        console.warn('[Top.gg] API not initialized! Check TOPGG_TOKEN in .env');
     }
 
     const partyCount = getActivePartyCount(userId);
