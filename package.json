@@ -19,9 +19,9 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@top-gg/sdk": "^3.1.6",
-    "discord.js": "^13.17.1",
+    "discord.js": "^14.16.3",
     "dotenv": "^17.2.3",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "@top-gg/sdk": "^3.1.6"
   }
 }
