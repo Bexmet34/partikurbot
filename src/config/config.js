@@ -25,5 +25,8 @@ module.exports = {
 
     // Log Kanalları
     LOG_CHANNELS: process.env.LOG_CHANNELS ? process.env.LOG_CHANNELS.split(',') : [],
+
+    // Top.gg Configuration
+    TOPGG_TOKEN: process.env.TOPGG_TOKEN,
 };
 

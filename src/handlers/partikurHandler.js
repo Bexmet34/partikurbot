@@ -1,9 +1,13 @@
-const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder } = require('discord.js');
+const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getActivePartyCount } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
 const { getGuildConfig } = require('../services/guildConfig');
 const { t } = require('../services/i18n');
+const config = require('../config/config');
+const { Api } = require('@top-gg/sdk');
 
+// Initialize Top.gg API if token exists
+const topggApi = config.TOPGG_TOKEN ? new Api(config.TOPGG_TOKEN) : null;
 
 /**
  * Handles /createparty command
@@ -14,9 +18,35 @@ async function handleCreatePartyCommand(interaction) {
     const lang = guildConfig?.language || 'tr';
     const userId = interaction.user.id;
     const isOwner = interaction.user.id === interaction.guild.ownerId;
-    const whitelisted = isOwner || await isWhitelisted(userId, interaction.guildId);
-    const partyCount = getActivePartyCount(userId);
+    const isDeveloper = config.WHITELIST_USERS.includes(userId);
+    const whitelisted = isOwner || isDeveloper || await isWhitelisted(userId, interaction.guildId);
 
+    // 1. Top.gg Vote Check (Bypass for whitelisted/owners/devs)
+    if (topggApi && !whitelisted) {
+        try {
+            const hasVoted = await topggApi.hasVoted(userId);
+            if (!hasVoted) {
+                const voteRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setLabel(t('party.vote_link_text', lang))
+                        .setStyle(ButtonStyle.Link)
+                        .setURL('https://top.gg/bot/1082239904169336902/vote')
+                );
+
+                return await interaction.reply({
+                    content: t('party.vote_required', lang),
+                    components: [voteRow],
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+        } catch (error) {
+            console.error('[Top.gg] Vote check failed:', error);
+            // In case of API failure, we might want to allow the command or block it. 
+            // Usually letting it through is better for UX, or just log.
+        }
+    }
+
+    const partyCount = getActivePartyCount(userId);
     const limit = whitelisted ? 3 : 1;
 
     if (partyCount >= limit) {

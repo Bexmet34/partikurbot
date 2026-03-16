@@ -94,7 +94,9 @@ module.exports = {
         party_time_label: 'Event Time (Numbers Only)',
         party_time_placeholder: 'e.g., 2130',
         party_leader: 'Party Leader',
-        party_description: 'Description'
+        party_description: 'Description',
+        vote_required: '⚠️ You must vote for our bot to use this command!',
+        vote_link_text: 'Vote Now'
     },
     manage: {
         settings_title: 'Party Settings',

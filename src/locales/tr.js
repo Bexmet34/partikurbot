@@ -94,7 +94,9 @@ module.exports = {
         party_time_label: 'Etkinlik Saati (Sadece Sayı)',
         party_time_placeholder: 'Örn: 2130',
         party_leader: 'Parti Lideri',
-        party_description: 'Açıklama'
+        party_description: 'Açıklama',
+        vote_required: '⚠️ Bu komutu kullanabilmek için botumuza oy vermeniz gerekmektedir!',
+        vote_link_text: 'Oy Ver'
     },
     manage: {
         settings_title: 'Parti Ayarları',
