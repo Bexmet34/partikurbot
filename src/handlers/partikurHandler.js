@@ -23,29 +23,33 @@ async function handleCreatePartyCommand(interaction) {
 
     // 1. Top.gg Vote Check (Bypass ONLY for Bot Owner/Developer)
     if (topggApi && !isDeveloper) {
+        let hasVoted = false;
         try {
             console.log(`[Top.gg] Checking vote for user: ${userId}`);
-            const hasVoted = await topggApi.hasVoted(userId);
-            console.log(`[Top.gg] User ${userId} hasVoted: ${hasVoted}`);
-
-            if (!hasVoted) {
-                const voteRow = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setLabel(t('party.vote_link_text', lang))
-                        .setStyle(ButtonStyle.Link)
-                        .setURL('https://top.gg/bot/1082239904169336902/vote')
-                );
-
-                return await interaction.reply({
-                    content: t('party.vote_required', lang),
-                    components: [voteRow],
-                    flags: [MessageFlags.Ephemeral]
-                });
-            }
+            hasVoted = await topggApi.hasVoted(userId);
+            console.log(`[Top.gg] User ${userId} hasVoted result: ${hasVoted}`);
         } catch (error) {
-            console.error('[Top.gg] Vote check failed:', error);
+            // Top.gg API 404 means user never voted or cache not found.
+            // We treat all errors as "not voted" for security.
+            console.error(`[Top.gg] API Error for ${userId}:`, error.message);
+            hasVoted = false; 
         }
-    } else if (!topggApi) {
+
+        if (!hasVoted) {
+            const voteRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setLabel(t('party.vote_link_text', lang))
+                    .setStyle(ButtonStyle.Link)
+                    .setURL('https://top.gg/bot/1082239904169336902/vote')
+            );
+
+            return await interaction.reply({
+                content: t('party.vote_required', lang),
+                components: [voteRow],
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
+    } else if (!topggApi && !isDeveloper) {
         console.warn('[Top.gg] API not initialized! Check TOPGG_TOKEN in .env');
     }
 
