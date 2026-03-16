@@ -55,7 +55,7 @@ module.exports = {
         page_1: 'Komut Listesi',
         page_2: 'Yönetim',
         page_3: 'Ceza Sistemi',
-        support_server: 'Destek Sunucusu',
+        top_gg: 'Top.gg',
         cmd_createparty: 'Dinamik bir form açar. İçerik, çıkış yeri ve özel rolleri belirlemenizi sağlar.',
         cmd_stats: 'Bir oyuncunun Albion Online (Europe) istatistiklerini döküm halinde getirir.',
         cmd_members: 'Loncanızdaki aktif üyeleri sayfa sayfa listeler.',

@@ -55,7 +55,7 @@ module.exports = {
         page_1: 'Command List',
         page_2: 'Management',
         page_3: 'Punishment',
-        support_server: 'Support Server',
+        top_gg: 'Top.gg',
         cmd_createparty: 'Opens a dynamic form. Allows you to set content, location, and custom roles.',
         cmd_stats: 'Displays an Albion Online (Europe) player\'s statistics.',
         cmd_members: 'Lists your guild\'s active members page by page.',

@@ -135,7 +135,7 @@ function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
         },
         {
             name: '',
-            value: `[Website ](https://veyronixbot.vercel.app/) - [Support](https://discord.gg/RZJE77KEVB)  -  [Donate](https://www.shopier.com/CyberShadows/44734656)\n\n`
+            value: `[Website ](https://veyronixbot.vercel.app/) - [Top.gg](https://top.gg/tr/bot/1082239904169336902)  -  [Donate](https://www.shopier.com/CyberShadows/44734656)\n\n`
         }
     );
 }

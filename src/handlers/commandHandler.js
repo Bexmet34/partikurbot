@@ -32,8 +32,8 @@ async function handleHelpCommand(interaction) {
     // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects
 
     const linkRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel(`🌐 ${t('help.title_links', lang).split('&')[0].trim()}`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
-        new ButtonBuilder().setLabel(`💬 ${t('help.support_server', lang)}`).setStyle(ButtonStyle.Link).setURL('https://discord.gg/RZJE77KEVB'),
+        new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
+        new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL('https://top.gg/tr/bot/1082239904169336902'),
         new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
     );
 
