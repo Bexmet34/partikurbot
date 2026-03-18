@@ -3,7 +3,8 @@ const { t } = require('../services/i18n');
 const { getGuildConfig } = require('../services/guildConfig');
 const { removeActiveParty } = require('../services/partyManager');
 const { createClosedButton, createCustomPartyComponents, isSelectMenuMode, updateButtonStates } = require('../builders/componentBuilder');
-const { createPartikurEmbed, buildRolesValue, addFooterFields, parseEmbedData } = require('../builders/embedBuilder');
+const { createPartikurEmbed, buildRolesValue, buildRolesFields, addFooterFields, parseEmbedData } = require('../builders/embedBuilder');
+
 const db = require('../services/db');
 const { EMPTY_SLOT } = require('../constants/constants');
 
@@ -119,7 +120,9 @@ async function handleManageMembersOption(interaction, lang) {
     }
     if (!message || !message.embeds[0]) return;
     const fields = message.embeds[0].fields;
-    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
+    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerValue = rollerFields.map(f => f.value).join('\n');
+
 
     const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*<@(\d+)>/g;
     let members = [];
@@ -201,11 +204,7 @@ async function handleEditModal(interaction) {
     const ownerId = oldData.ownerId;
 
     const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, guildName, lang, ownerId);
-    embed.addFields({
-        name: '**Roller**',
-        value: buildRolesValue(rolesWithMembers, lang),
-        inline: true
-    });
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
     addFooterFields(embed, filledCount, totalCount, lang);
 
     // Update DB
@@ -253,11 +252,8 @@ async function handleKickMember(interaction) {
     const totalCount = rolesWithMembers.length;
 
     const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    embed.addFields({
-        name: '**Roller**',
-        value: buildRolesValue(rolesWithMembers, lang),
-        inline: true
-    });
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+
     addFooterFields(embed, filledCount, totalCount, lang);
 
     // Select menu mode or button mode
@@ -335,11 +331,8 @@ async function handleJoinRoleSelect(interaction) {
     const totalCount = rolesWithMembers.length;
 
     const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    newEmbed.addFields({
-        name: '**Roller**',
-        value: buildRolesValue(rolesWithMembers, lang),
-        inline: true
-    });
+    newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang));
+
     addFooterFields(newEmbed, filledCount, totalCount, lang);
 
     // Regenerate select menu components with updated member state
@@ -414,11 +407,8 @@ async function handleAddMemberUserSelect(interaction) {
     const totalCount = rolesWithMembers.length;
 
     const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    embed.addFields({
-        name: '**Roller**',
-        value: buildRolesValue(rolesWithMembers, lang),
-        inline: true
-    });
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+
     addFooterFields(embed, filledCount, totalCount, lang);
 
     // Update components

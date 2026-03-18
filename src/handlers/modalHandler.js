@@ -42,15 +42,13 @@ async function handlePartiModal(interaction) {
         const rolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
 
         // CREATE PAYLOAD
-        const { buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
+        const { buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
         const embed = createPartikurEmbed(header, rolesList, description, '', 0, guildName, lang, userId);
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
         const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
-        embed.addFields({
-            name: '**Roller**',
-            value: buildRolesValue(rolesWithMembers, lang),
-            inline: true
-        });
+        
+        embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+
 
         addFooterFields(embed, 0, rolesList.length, lang);
 

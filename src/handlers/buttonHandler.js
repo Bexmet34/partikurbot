@@ -6,7 +6,8 @@ const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
 const { createProgressBar } = require('../utils/generalUtils');
 const { getGuildConfig } = require('../services/guildConfig');
-const { createHelpEmbed, createDonateEmbed, createPartikurEmbed, addFooterFields, buildRolesValue, parseEmbedData } = require('../builders/embedBuilder');
+const { createHelpEmbed, createDonateEmbed, createPartikurEmbed, addFooterFields, buildRolesValue, buildRolesFields, parseEmbedData } = require('../builders/embedBuilder');
+
 const db = require('../services/db');
 const { t } = require('../services/i18n');
 
@@ -171,11 +172,8 @@ async function handlePartyButtons(interaction) {
         const totalCount = rolesWithMembers.length;
 
         const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId, partyTime);
-        newEmbed.addFields({
-            name: '**Roller**',
-            value: buildRolesValue(rolesWithMembers, lang),
-            inline: true
-        });
+        newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang));
+
         addFooterFields(newEmbed, filledCount, totalCount, lang);
 
         // Update components — select menu mode or button mode
@@ -275,7 +273,9 @@ async function handleAddMemberButton(interaction, lang) {
     if (!message) return;
 
     const fields = message.embeds[0].fields;
-    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
+    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerValue = rollerFields.map(f => f.value).join('\n');
+
 
     // Parse Roles to find empty ones
     const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;

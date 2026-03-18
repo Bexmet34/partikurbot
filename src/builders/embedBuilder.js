@@ -6,7 +6,9 @@ const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
 function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
-    const rollerValue = fields.find(f => f.name && f.name.includes('Roller'))?.value || '';
+    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerValue = rollerFields.map(f => f.value).join('\n');
+
 
     const infoField = fields.find(f => f.value && (f.value.includes('👑') || f.value.includes('📝')))?.value || '';
     const ownerId = infoField.match(/<@(\d+)>/)?.[1] || null;
@@ -226,14 +228,57 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
     }).join('\n');
 }
 
+/**
+ * Builds an array of field objects, splitting roles if they exceed 1024 chars
+ */
+function buildRolesFields(rolesWithMembers, lang = 'tr') {
+    const fields = [];
+    let currentChunk = [];
+    let currentLength = 0;
+    let fieldCount = 0;
+
+    rolesWithMembers.forEach((item, index) => {
+        const emoji = item.userId ? '🔴' : '🟡';
+        const mention = item.userId ? `<@${item.userId}>` : '';
+        const line = `${emoji} **${item.role}:** ${mention}`;
+        
+        // +1 for the newline that will be added
+        if (currentLength + line.length + 1 > 1000) {
+            fields.push({
+                name: fieldCount === 0 ? '**Roller**' : `**Roller (${fieldCount + 1})**`,
+                value: currentChunk.join('\n'),
+                inline: true
+            });
+            currentChunk = [line];
+            currentLength = line.length;
+            fieldCount++;
+        } else {
+            currentChunk.push(line);
+            currentLength += line.length + 1;
+        }
+    });
+
+    if (currentChunk.length > 0) {
+        fields.push({
+            name: fieldCount === 0 ? '**Roller**' : `**Roller (${fieldCount + 1})**`,
+            value: currentChunk.join('\n'),
+            inline: true
+        });
+    }
+
+    return fields;
+}
+
 module.exports = {
     createEmbed,
     createPartikurEmbed,
     addFooterFields,
     buildRolesValue,
+    buildRolesFields,
     createHelpEmbed,
     createDonateEmbed,
     createProgressBar,
     parseEmbedData
 };
+
 
