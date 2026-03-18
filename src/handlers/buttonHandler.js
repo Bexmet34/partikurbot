@@ -197,6 +197,7 @@ async function handlePartyButtons(interaction) {
         }
 
         await interaction.update({ embeds: [newEmbed], components: newComponents });
+        return; // Interaction zaten cevaplandı, settings bloklarına düşmesin
     }
 
     // --- SETTINGS BUTTON HANDLERS ---

@@ -61,16 +61,27 @@ async function handleInteractionError(interaction, error, lang = 'tr') {
         error.message?.includes('SSL') ||
         error.message?.includes('session id');
 
-    const isIgnorable = isSslError || error.code === 10062 || error.code === 40060;
+    // Discord bazen error.code yerine error.errors objesi ile dönüyor
+    const errorCode = error.code ?? error.errors?.[0]?.code;
+
+    // Interaction zaman aşımı (10062) veya zaten cevaplanmış (40060) hatalari
+    const isUnknownInteraction = error.message?.includes('Unknown interaction') ||
+        error.message?.includes('already been acknowledged') ||
+        error.message?.includes('Interaction has already been');
+
+    const isIgnorable = isSslError ||
+        errorCode === 10062 ||
+        errorCode === 40060 ||
+        isUnknownInteraction;
 
     if (isIgnorable) {
         return;
     }
 
-    console.error(`[InteractionError] Real Error: ${error.message} (Code: ${error.code})`);
+    console.error(`[InteractionError] Real Error: ${error.message} (Code: ${errorCode ?? 'unknown'})`);
 
     let errorMessage = error.message || t('common.error', lang);
-    if (error.code === 50013) {
+    if (errorCode === 50013) {
         errorMessage = lang === 'en' ? 'Bot lack permissions for this action.' : 'Botun bu işlemi yapmak için yetkisi yok (Yetki Hatası).';
     }
 

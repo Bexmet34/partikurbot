@@ -29,10 +29,13 @@ async function handleCreatePartyCommand(interaction) {
             hasVoted = await topggApi.hasVoted(userId);
             console.log(`[Top.gg] User ${userId} hasVoted result: ${hasVoted}`);
         } catch (error) {
-            // Top.gg API 404 means user never voted or cache not found.
-            // We treat all errors as "not voted" for security.
-            console.error(`[Top.gg] API Error for ${userId}:`, error.message);
-            hasVoted = false; 
+            // 404 = kullanıcı hiç oy atmamış, bu beklenen bir durum
+            if (error.message?.includes('404') || error.status === 404) {
+                console.warn(`[Top.gg] User ${userId} has not voted (404 Not Found - expected).`);
+            } else {
+                console.error(`[Top.gg] API Error for ${userId}:`, error.message);
+            }
+            hasVoted = false;
         }
 
         if (!hasVoted) {
