@@ -9,7 +9,6 @@ function parseEmbedData(embed, lang) {
     const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
     const rollerValue = rollerFields.map(f => f.value).join('\n');
 
-
     const infoField = fields.find(f => f.value && (f.value.includes('👑') || f.value.includes('📝')))?.value || '';
     const ownerId = infoField.match(/<@(\d+)>/)?.[1] || null;
     
@@ -17,16 +16,13 @@ function parseEmbedData(embed, lang) {
     const descLabel = t('party.party_description', lang);
     const descLine = infoField.split('\n').find(l => l.includes('📝'));
     if (descLine) {
-        // Find the index of the label and skip it along with the colon/bolding
         const labelIndex = descLine.indexOf(descLabel);
         if (labelIndex !== -1) {
             description = descLine.substring(labelIndex + descLabel.length).replace(/^[:\s*]+/, '').trim();
-            // Clean up any double labels caused by the previous bug
             while (description.startsWith(descLabel)) {
                 description = description.substring(descLabel.length).replace(/^[:\s*]+/, '').trim();
             }
         } else {
-            // Fallback: remove icon and any bolded label before colon
             description = descLine.replace(/^📝\s*(\*\*.*?\*\*\s*:\s*)?/, '').trim();
         }
         
@@ -35,40 +31,37 @@ function parseEmbedData(embed, lang) {
         }
     }
 
-    // Regex matches either a role (starts with 🔴|🟡) or a header (starts with 📌)
-    // $1: Role name, $2: Full mention string, $3: User ID, $4: Gear info (if any), $5: Header name
-    const roleRegex = /(?:(?:🔴|🟡)\s*(.*?):\s*(<@(\d+)>|)([\s\S]*?)|(?:📌\s*(.*?)))(?=(?:🔴|🟡|📌)|$)/g;
+    // NEW ROBUST PARSING
+    const entries = rollerValue.split(/(?=🔴|🟡|📌)/).map(e => e.trim()).filter(e => e.length > 0);
     let rolesWithMembers = [];
-    let match;
-    while ((match = roleRegex.exec(rollerValue)) !== null) {
-        // Case 1: Heading
-        if (match[5]) {
+    
+    for (const entry of entries) {
+        if (entry.startsWith('📌')) {
+            const headerName = entry.substring(1).trim();
             rolesWithMembers.push({
-                role: `#${match[5].trim()}`,
+                role: `#${headerName}`,
                 userId: null
             });
-            continue;
+        } else if (entry.startsWith('🔴') || entry.startsWith('🟡')) {
+            const lines = entry.split('\n');
+            const firstLine = lines[0];
+            const gear = lines.slice(1).join('\n').trim();
+            
+            // Parse: "🔴 Role Name: <@ID>"
+            const lineMatch = firstLine.match(/(?:🔴|🟡)\s*(.*?):\s*(?:<@(\d+)>|)/);
+            if (lineMatch) {
+                const roleName = lineMatch[1].trim();
+                const userId = lineMatch[2] || null;
+                
+                let fullRole = roleName;
+                if (gear) fullRole += ">" + gear;
+                
+                rolesWithMembers.push({
+                    role: fullRole,
+                    userId: userId
+                });
+            }
         }
-
-        // Case 2: Role
-        let roleName = (match[1] || '').trim();
-        if (!roleName) continue;
-        
-        let subLine = (match[4] || '').trim();
-        
-        // Remove the visual formatting from the sub-line if it exists
-        subLine = subLine.replace(/^[\s᲼┕\-➔>\\*]+/, '').replace(/[\s\\*]+$/, '').trim();
-
-        // Reconstruct the original role string (Role>Gear)
-        let fullRole = roleName;
-        if (subLine && subLine.length > 0) {
-            fullRole += ">" + subLine;
-        }
-
-        rolesWithMembers.push({
-            role: fullRole,
-            userId: match[3] || null
-        });
     }
 
 
@@ -130,14 +123,19 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
  * Creates a custom party embed
  */
 function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
-    let sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
+    let sanitizedHeader = header ? cleanTitle(header) : '';
+    
+    // Explicitly check for generic titles
+    const isGeneric = !sanitizedHeader || sanitizedHeader === '**PARTI KURULDU**' || sanitizedHeader === 'PARTI KURULDU' || sanitizedHeader.includes('PARTI KURULDU');
 
-    // If first item is a header and title is generic, use header as title
+    // If title is generic and first item is a header, use header as title
     const firstRole = rolesList[0];
-    if (firstRole && (firstRole.startsWith('#HEADER:') || firstRole.startsWith('#')) && (sanitizedHeader === '**PARTI KURULDU**' || sanitizedHeader === 'PARTI KURULDU')) {
+    if (firstRole && (firstRole.startsWith('#HEADER:') || firstRole.startsWith('#')) && isGeneric) {
         const headerLabel = firstRole.startsWith('#HEADER:') ? firstRole.substring(8).trim() : firstRole.substring(1).trim();
         if (headerLabel) sanitizedHeader = headerLabel.toUpperCase();
     }
+
+    if (!sanitizedHeader) sanitizedHeader = '**PARTİ KURULDU**';
 
     const embed = new EmbedBuilder()
         .setTitle(sanitizedHeader)
@@ -298,7 +296,8 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
         let line = '';
         if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
             const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
-            line = `\n📌 ${headerLabel}`;
+            // Only add leading newline if it's not the first item in the whole list
+            line = (index === 0) ? `📌 ${headerLabel}` : `\n📌 ${headerLabel}`;
         } else {
             // Parse Role>Gear format for better display
             let displayRole = item.role;
