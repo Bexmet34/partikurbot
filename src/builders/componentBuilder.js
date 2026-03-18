@@ -48,6 +48,9 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         .setPlaceholder(lang === 'tr' ? '🎮 Bir rol seçerek katıl' : '🎮 Select a role to join');
 
     rolesList.forEach((role, index) => {
+        // Skip headers
+        if (role.startsWith('#HEADER:') || role.startsWith('#')) return;
+
         const member = rolesWithMembers ? rolesWithMembers[index] : null;
         const isFull = member && member.userId != null;
 

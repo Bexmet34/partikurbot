@@ -35,20 +35,30 @@ function parseEmbedData(embed, lang) {
         }
     }
 
-    // Updated regex to capture potential sub-lines (gear info)
-    // Matches emoji, then **Role Name:**, then optional mention, then everything until next emoji or end of string
-    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)([\s\S]*?)(?=(?:🔴|🟡)|$)/g;
+    // Regex matches either a role (starts with 🔴|🟡) or a header (starts with 📌)
+    // $1: Role name, $2: Full mention string, $3: User ID, $4: Gear info (if any), $5: Header name
+    const roleRegex = /(?:(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)([\s\S]*?)|(?:📌\s*\*\*(.*?)\*\*))(?=(?:🔴|🟡|📌)|$)/g;
     let rolesWithMembers = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {
-        let roleName = match[1].trim();
-        let subLine = match[4].trim();
+        // Case 1: Heading
+        if (match[5]) {
+            rolesWithMembers.push({
+                role: `#${match[5].trim()}`,
+                userId: null
+            });
+            continue;
+        }
+
+        // Case 2: Role
+        let roleName = (match[1] || '').trim();
+        if (!roleName) continue;
+        
+        let subLine = (match[4] || '').trim();
         
         // Remove the visual formatting from the sub-line if it exists
-        // (removing things like "┕ " or special spacing, and markdown italics)
         subLine = subLine.replace(/^[\s᲼┕\-➔>\\*]+/, '').replace(/[\s\\*]+$/, '').trim();
 
-        
         // Reconstruct the original role string (Role>Gear)
         let fullRole = roleName;
         if (subLine && subLine.length > 0) {
@@ -242,6 +252,11 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
         const emoji = item.userId ? '🔴' : '🟡';
         const mention = item.userId ? `<@${item.userId}>` : '';
         
+        if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
+            const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
+            return `\n📌 **${headerLabel}**`;
+        }
+
         // Parse Role>Gear format for better display
         let displayRole = item.role;
         let gearInfo = '';
@@ -268,29 +283,33 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
     const fields = [];
     let currentChunk = [];
     let currentLength = 0;
-    let fieldCount = 0;
 
     rolesWithMembers.forEach((item, index) => {
         const emoji = item.userId ? '🔴' : '🟡';
         const mention = item.userId ? `<@${item.userId}>` : '';
         
-        // Parse Role>Gear format for better display
-        let displayRole = item.role;
-        let gearInfo = '';
-        if (item.role.includes('>')) {
-            const parts = item.role.split('>');
-            displayRole = parts[0].trim();
-            gearInfo = parts.slice(1).join('>').trim();
-            if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
-        }
+        let line = '';
+        if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
+            const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
+            line = `\n📌 **${headerLabel}**`;
+        } else {
+            // Parse Role>Gear format for better display
+            let displayRole = item.role;
+            let gearInfo = '';
+            if (item.role.includes('>')) {
+                const parts = item.role.split('>');
+                displayRole = parts[0].trim();
+                gearInfo = parts.slice(1).join('>').trim();
+                if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
+            }
 
-        let line = `${emoji} **${displayRole}:** ${mention}`;
-        if (gearInfo) {
-            line += `\n᲼᲼*${gearInfo}*`;
+            line = `${emoji} **${displayRole}:** ${mention}`;
+            if (gearInfo) {
+                line += `\n᲼᲼*${gearInfo}*`;
+            }
         }
         
         // +1 for the newline that will be added
-        // Using a slightly lower threshold (950) to be safe with extra formatting
         if (currentLength + line.length + 2 > 950) {
             fields.push({
                 name: `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`,
@@ -299,9 +318,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
             });
             currentChunk = [line];
             currentLength = line.length;
-            fieldCount++;
-        }
- else {
+        } else {
             currentChunk.push(line);
             currentLength += line.length + 1;
         }
@@ -314,7 +331,6 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
             inline: false
         });
     }
-
 
     return fields;
 }

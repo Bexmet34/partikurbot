@@ -7,6 +7,7 @@ const { createPartikurEmbed, buildRolesValue, buildRolesFields, addFooterFields,
 
 const db = require('../services/db');
 const { EMPTY_SLOT } = require('../constants/constants');
+const isActualRole = (r) => r.role && !r.role.startsWith('#HEADER:') && !r.role.startsWith('#');
 
 async function handleManageMenu(interaction) {
     if (!interaction.isStringSelectMenu()) return;
@@ -183,7 +184,9 @@ async function handleEditModal(interaction) {
         }
     });
 
-    const newRolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+    const newRolesList = rolesRaw.split('\n')
+        .map(r => r.trim())
+        .filter(r => r.length > 0);
     const rolesWithMembers = newRolesList.map(role => {
         let userId = null;
         if (oldMembers[role] && oldMembers[role].length > 0) {
@@ -198,8 +201,9 @@ async function handleEditModal(interaction) {
     const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents, updateButtonStates } = require('../builders/componentBuilder');
 
-    const filledCount = rolesWithMembers.filter(r => r.userId).length;
-    const totalCount = rolesWithMembers.length;
+    const actualRoles = rolesWithMembers.filter(isActualRole);
+    const filledCount = actualRoles.filter(r => r.userId).length;
+    const totalCount = actualRoles.length;
 
     const ownerId = oldData.ownerId;
 
@@ -248,8 +252,9 @@ async function handleKickMember(interaction) {
     const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents, updateButtonStates } = require('../builders/componentBuilder');
 
-    const filledCount = rolesWithMembers.filter(r => r.userId).length;
-    const totalCount = rolesWithMembers.length;
+    const actualRoles = rolesWithMembers.filter(isActualRole);
+    const filledCount = actualRoles.filter(r => r.userId).length;
+    const totalCount = actualRoles.length;
 
     const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields(...buildRolesFields(rolesWithMembers, lang));
@@ -327,8 +332,9 @@ async function handleJoinRoleSelect(interaction) {
         [userId, roleName, message.id]).catch(e => console.error(e));
 
     // Reconstruct Embed
-    const filledCount = rolesWithMembers.filter(r => r.userId).length;
-    const totalCount = rolesWithMembers.length;
+    const actualRoles = rolesWithMembers.filter(isActualRole);
+    const filledCount = actualRoles.filter(r => r.userId).length;
+    const totalCount = actualRoles.length;
 
     const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang));
@@ -403,8 +409,9 @@ async function handleAddMemberUserSelect(interaction) {
         [targetUserId, roleName, messageId]).catch(e => console.error(e));
 
     // Reconstruct Embed
-    const filledCount = rolesWithMembers.filter(r => r.userId).length;
-    const totalCount = rolesWithMembers.length;
+    const actualRoles = rolesWithMembers.filter(isActualRole);
+    const filledCount = actualRoles.filter(r => r.userId).length;
+    const totalCount = actualRoles.length;
 
     const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
     embed.addFields(...buildRolesFields(rolesWithMembers, lang));

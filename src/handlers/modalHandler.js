@@ -39,7 +39,9 @@ async function handlePartiModal(interaction) {
         const description = interaction.fields.getTextInputValue('party_description') || '';
 
         // Split by newline and filter empty lines
-        const rolesList = rolesRaw.split('\n').map(r => r.trim()).filter(r => r.length > 0);
+        const rolesList = rolesRaw.split('\n')
+            .map(r => r.trim())
+            .filter(r => r.length > 0);
 
         // CREATE PAYLOAD
         const { buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
@@ -50,7 +52,8 @@ async function handlePartiModal(interaction) {
         embed.addFields(...buildRolesFields(rolesWithMembers, lang));
 
 
-        addFooterFields(embed, 0, rolesList.length, lang);
+        const actualRoles = rolesList.filter(r => !r.startsWith('#HEADER:') && !r.startsWith('#'));
+        addFooterFields(embed, 0, actualRoles.length, lang);
 
         const msg = await safeReply(interaction, { content: '@everyone', embeds: [embed], components: components });
 
