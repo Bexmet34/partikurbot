@@ -6,8 +6,11 @@ const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
 function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
-    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
-    const rollerValue = rollerFields.map(f => f.value).join('\n');
+    // Identify fields containing roles or headers
+    const rollerFields = fields.filter(f => 
+        (f.name && (f.name.includes('Roller') || f.name.includes('Roles') || f.name.includes('📌'))) ||
+        (f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')))
+    );
 
     const infoField = fields.find(f => f.value && (f.value.includes('👑') || f.value.includes('📝')))?.value || '';
     const ownerId = infoField.match(/<@(\d+)>/)?.[1] || null;
@@ -31,23 +34,37 @@ function parseEmbedData(embed, lang) {
         }
     }
 
-    // NEW ROBUST PARSING
-    const entries = rollerValue.split(/(?=🔴|🟡|📌)/).map(e => e.trim()).filter(e => e.length > 0);
     let rolesWithMembers = [];
     
-    for (const entry of entries) {
-        if (entry.startsWith('📌')) {
-            const headerName = entry.substring(1).trim();
-            rolesWithMembers.push({
-                role: `#${headerName}`,
-                userId: null
-            });
-        } else if (entry.startsWith('🔴') || entry.startsWith('🟡')) {
+    for (const field of rollerFields) {
+        // If the title of the field is a header (📌)
+        if (field.name && field.name.includes('📌')) {
+            const headerName = field.name.replace(/^[^📌]*📌/, '').split('[')[0].trim();
+            if (headerName) {
+                rolesWithMembers.push({
+                    role: `#${headerName}`,
+                    userId: null
+                });
+            }
+        } else if (field.value && field.value.includes('📌')) {
+            // Handle cases where header might still be in the value (migration/fallback)
+            const subEntries = field.value.split(/(?=📌)/);
+            for (const sub of subEntries) {
+                if (sub.startsWith('📌')) {
+                    const hName = sub.substring(1).split('\n')[0].trim();
+                    rolesWithMembers.push({ role: `#${hName}`, userId: null });
+                }
+            }
+        }
+
+        const entries = field.value.split(/(?=🔴|🟡)/).map(e => e.trim()).filter(e => e.length > 0);
+        for (const entry of entries) {
+            if (!entry.startsWith('🔴') && !entry.startsWith('🟡')) continue;
+
             const lines = entry.split('\n');
             const firstLine = lines[0];
             const gear = lines.slice(1).join('\n').trim();
             
-            // Parse: "🔴 Role Name: <@ID>"
             const lineMatch = firstLine.match(/(?:🔴|🟡)\s*(.*?):\s*(?:<@(\d+)>|)/);
             if (lineMatch) {
                 const roleName = lineMatch[1].trim();
@@ -286,20 +303,36 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
  */
 function buildRolesFields(rolesWithMembers, lang = 'tr') {
     const fields = [];
+    const hasHeaders = rolesWithMembers.some(r => r.role && (r.role.startsWith('#HEADER:') || r.role.startsWith('#')));
+    
+    let currentFieldName = hasHeaders ? '\u200b' : `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`;
     let currentChunk = [];
     let currentLength = 0;
 
     rolesWithMembers.forEach((item, index) => {
-        const emoji = item.userId ? '🔴' : '🟡';
-        const mention = item.userId ? `<@${item.userId}>` : '';
+        const isHeader = item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'));
         
-        let line = '';
-        if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
+        if (isHeader) {
             const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
-            // Only add leading newline if it's not the first item in the whole list
-            line = (index === 0) ? `📌 ${headerLabel}` : `\n📌 ${headerLabel}`;
+            
+            // Push previous chunk if it has content
+            if (currentChunk.length > 0) {
+                fields.push({
+                    name: currentFieldName,
+                    value: currentChunk.join('\n'),
+                    inline: false
+                });
+                currentChunk = [];
+                currentLength = 0;
+            }
+            
+            // Heading becomes the name for the next field
+            currentFieldName = `📌 ${headerLabel}`;
         } else {
-            // Parse Role>Gear format for better display
+            // Render Role
+            const emoji = item.userId ? '🔴' : '🟡';
+            const mention = item.userId ? `<@${item.userId}>` : '';
+            
             let displayRole = item.role;
             let gearInfo = '';
             if (item.role.includes('>')) {
@@ -309,31 +342,32 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
                 if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
             }
 
-            line = `${emoji} ${displayRole}: ${mention}`;
+            let line = `${emoji} ${displayRole}: ${mention}`;
             if (gearInfo) {
                 line += `\n${gearInfo}`;
             }
-        }
-        
-        // +1 for the newline that will be added
-        if (currentLength + line.length + 2 > 950) {
-            fields.push({
-                name: '\u200b',
-                value: currentChunk.join('\n'),
-                inline: false
-            });
-            currentChunk = [line];
-            currentLength = line.length;
-        } else {
-            currentChunk.push(line);
-            currentLength += line.length + 1;
+
+            // Check for Discord's 1024 char limit per field value
+            if (currentLength + line.length + 2 > 1000) {
+                fields.push({
+                    name: currentFieldName,
+                    value: currentChunk.join('\n'),
+                    inline: false
+                });
+                currentChunk = [line];
+                currentLength = line.length;
+                // Keep the heading name for continuation fields if they exist
+            } else {
+                currentChunk.push(line);
+                currentLength += line.length + 1;
+            }
         }
     });
 
-    if (currentChunk.length > 0) {
+    if (currentChunk.length > 0 || fields.length === 0) {
         fields.push({
-            name: '\u200b',
-            value: currentChunk.join('\n'),
+            name: currentFieldName,
+            value: currentChunk.length > 0 ? currentChunk.join('\n') : '\u200b',
             inline: false
         });
     }
