@@ -47,7 +47,7 @@ async function handleCloseOption(interaction, ownerId, lang) {
 
     const oldEmbed = message.embeds[0];
     const fields = oldEmbed.fields || [];
-    const newFields = fields.filter(f => f.name && !f.name.includes('📌') && !f.name.includes('KURALLAR'));
+    const newFields = fields.filter(f => !f.value?.includes('📌') && !f.name?.includes('KURALLAR'));
 
     const closedEmbed = EmbedBuilder.from(oldEmbed)
         .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
@@ -121,11 +121,11 @@ async function handleManageMembersOption(interaction, lang) {
     }
     if (!message || !message.embeds[0]) return;
     const fields = message.embeds[0].fields;
-    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
     const rollerValue = rollerFields.map(f => f.value).join('\n');
 
 
-    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*<@(\d+)>/g;
+    const roleRegex = /(?:🔴|🟡)\s*(.*?):\s*<@(\d+)>/g;
     let members = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {

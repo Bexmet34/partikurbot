@@ -64,7 +64,7 @@ async function handlePartyButtons(interaction) {
 
         const oldEmbed = message.embeds[0];
         const fields = oldEmbed.fields || [];
-        const newFields = fields.filter(f => f.name && !f.name.includes('📌') && !f.name.includes('KURALLAR'));
+        const newFields = fields.filter(f => !f.value?.includes('📌') && !f.name?.includes('KURALLAR'));
 
         const closedEmbed = EmbedBuilder.from(oldEmbed)
             .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
@@ -273,12 +273,12 @@ async function handleAddMemberButton(interaction, lang) {
     if (!message) return;
 
     const fields = message.embeds[0].fields;
-    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
     const rollerValue = rollerFields.map(f => f.value).join('\n');
 
 
     // Parse Roles to find empty ones
-    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
+    const roleRegex = /(?:🔴|🟡)\s*(.*?):\s*(<@(\d+)>|)/g;
     let roles = [];
     let match;
     let counter = 0;

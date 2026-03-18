@@ -6,7 +6,7 @@ const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
 
 function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
-    const rollerFields = fields.filter(f => f.name && f.name.includes('Roller'));
+    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
     const rollerValue = rollerFields.map(f => f.value).join('\n');
 
 
@@ -130,7 +130,14 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
  * Creates a custom party embed
  */
 function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
-    const sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
+    let sanitizedHeader = cleanTitle(header) || '**PARTI KURULDU**';
+
+    // If first item is a header and title is generic, use header as title
+    const firstRole = rolesList[0];
+    if (firstRole && (firstRole.startsWith('#HEADER:') || firstRole.startsWith('#')) && (sanitizedHeader === '**PARTI KURULDU**' || sanitizedHeader === 'PARTI KURULDU')) {
+        const headerLabel = firstRole.startsWith('#HEADER:') ? firstRole.substring(8).trim() : firstRole.substring(1).trim();
+        if (headerLabel) sanitizedHeader = headerLabel.toUpperCase();
+    }
 
     const embed = new EmbedBuilder()
         .setTitle(sanitizedHeader)
@@ -312,7 +319,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
         // +1 for the newline that will be added
         if (currentLength + line.length + 2 > 950) {
             fields.push({
-                name: `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`,
+                name: '\u200b',
                 value: currentChunk.join('\n'),
                 inline: false
             });
@@ -326,7 +333,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
 
     if (currentChunk.length > 0) {
         fields.push({
-            name: `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`,
+            name: '\u200b',
             value: currentChunk.join('\n'),
             inline: false
         });
