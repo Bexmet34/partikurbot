@@ -37,7 +37,7 @@ function parseEmbedData(embed, lang) {
 
     // Regex matches either a role (starts with 🔴|🟡) or a header (starts with 📌)
     // $1: Role name, $2: Full mention string, $3: User ID, $4: Gear info (if any), $5: Header name
-    const roleRegex = /(?:(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)([\s\S]*?)|(?:📌\s*\*\*(.*?)\*\*))(?=(?:🔴|🟡|📌)|$)/g;
+    const roleRegex = /(?:(?:🔴|🟡)\s*(.*?):\s*(<@(\d+)>|)([\s\S]*?)|(?:📌\s*(.*?)))(?=(?:🔴|🟡|📌)|$)/g;
     let rolesWithMembers = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {
@@ -254,7 +254,7 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
         
         if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
             const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
-            return `\n📌 **${headerLabel}**`;
+            return `\n📌 ${headerLabel}`;
         }
 
         // Parse Role>Gear format for better display
@@ -268,9 +268,9 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
             if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
         }
 
-        let line = `${emoji} **${displayRole}:** ${mention}`;
+        let line = `${emoji} ${displayRole}: ${mention}`;
         if (gearInfo) {
-            line += `\n᲼᲼*${gearInfo}*`; // Using a special space for indentation
+            line += `\n${gearInfo}`;
         }
         return line;
     }).join('\n');
@@ -291,7 +291,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
         let line = '';
         if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
             const headerLabel = item.role.startsWith('#HEADER:') ? item.role.substring(8).trim() : item.role.substring(1).trim();
-            line = `\n📌 **${headerLabel}**`;
+            line = `\n📌 ${headerLabel}`;
         } else {
             // Parse Role>Gear format for better display
             let displayRole = item.role;
@@ -303,9 +303,9 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
                 if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
             }
 
-            line = `${emoji} **${displayRole}:** ${mention}`;
+            line = `${emoji} ${displayRole}: ${mention}`;
             if (gearInfo) {
-                line += `\n᲼᲼*${gearInfo}*`;
+                line += `\n${gearInfo}`;
             }
         }
         
