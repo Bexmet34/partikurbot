@@ -54,11 +54,12 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         const member = rolesWithMembers ? rolesWithMembers[index] : null;
         const isFull = member && member.userId != null;
 
-        let label = role;
+        // Remove item details from select menu label
+        let label = role.includes('>') ? role.split('>')[0].trim() : role;
         if (label.length > 90) label = label.substring(0, 87) + '...';
 
         const option = new StringSelectMenuOptionBuilder()
-            .setLabel(`${index + 1}. ${label}`)
+            .setLabel(label)
             .setValue(`${index}`)
             .setEmoji(isFull ? '🔴' : '🟡');
 
