@@ -35,15 +35,32 @@ function parseEmbedData(embed, lang) {
         }
     }
 
-    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)/g;
+    // Updated regex to capture potential sub-lines (gear info)
+    // Matches emoji, then **Role Name:**, then optional mention, then everything until next emoji or end of string
+    const roleRegex = /(?:🔴|🟡)\s*\*\*(.*?):\*\*\s*(<@(\d+)>|)([\s\S]*?)(?=(?:🔴|🟡)|$)/g;
     let rolesWithMembers = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {
+        let roleName = match[1].trim();
+        let subLine = match[4].trim();
+        
+        // Remove the visual formatting from the sub-line if it exists
+        // (removing things like "┕ " or special spacing, and markdown italics)
+        subLine = subLine.replace(/^[\s᲼┕\-➔>\\*]+/, '').replace(/[\s\\*]+$/, '').trim();
+
+        
+        // Reconstruct the original role string (Role>Gear)
+        let fullRole = roleName;
+        if (subLine && subLine.length > 0) {
+            fullRole += ">" + subLine;
+        }
+
         rolesWithMembers.push({
-            role: match[1],
+            role: fullRole,
             userId: match[3] || null
         });
     }
+
 
     return {
         title: embed.title,
@@ -224,7 +241,23 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
     return rolesWithMembers.map(item => {
         const emoji = item.userId ? '🔴' : '🟡';
         const mention = item.userId ? `<@${item.userId}>` : '';
-        return `${emoji} **${item.role}:** ${mention}`;
+        
+        // Parse Role>Gear format for better display
+        let displayRole = item.role;
+        let gearInfo = '';
+        if (item.role.includes('>')) {
+            const parts = item.role.split('>');
+            displayRole = parts[0].trim();
+            gearInfo = parts.slice(1).join('>').trim();
+            // Remove trailing = if user added it
+            if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
+        }
+
+        let line = `${emoji} **${displayRole}:** ${mention}`;
+        if (gearInfo) {
+            line += `\n᲼᲼*${gearInfo}*`; // Using a special space for indentation
+        }
+        return line;
     }).join('\n');
 }
 
@@ -240,19 +273,35 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
     rolesWithMembers.forEach((item, index) => {
         const emoji = item.userId ? '🔴' : '🟡';
         const mention = item.userId ? `<@${item.userId}>` : '';
-        const line = `${emoji} **${item.role}:** ${mention}`;
+        
+        // Parse Role>Gear format for better display
+        let displayRole = item.role;
+        let gearInfo = '';
+        if (item.role.includes('>')) {
+            const parts = item.role.split('>');
+            displayRole = parts[0].trim();
+            gearInfo = parts.slice(1).join('>').trim();
+            if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
+        }
+
+        let line = `${emoji} **${displayRole}:** ${mention}`;
+        if (gearInfo) {
+            line += `\n᲼᲼*${gearInfo}*`;
+        }
         
         // +1 for the newline that will be added
-        if (currentLength + line.length + 1 > 1000) {
+        // Using a slightly lower threshold (950) to be safe with extra formatting
+        if (currentLength + line.length + 2 > 950) {
             fields.push({
-                name: fieldCount === 0 ? '**Roller**' : `**Roller (${fieldCount + 1})**`,
+                name: `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`,
                 value: currentChunk.join('\n'),
-                inline: true
+                inline: false
             });
             currentChunk = [line];
             currentLength = line.length;
             fieldCount++;
-        } else {
+        }
+ else {
             currentChunk.push(line);
             currentLength += line.length + 1;
         }
@@ -260,14 +309,16 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
 
     if (currentChunk.length > 0) {
         fields.push({
-            name: fieldCount === 0 ? '**Roller**' : `**Roller (${fieldCount + 1})**`,
+            name: `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`,
             value: currentChunk.join('\n'),
-            inline: true
+            inline: false
         });
     }
 
+
     return fields;
 }
+
 
 module.exports = {
     createEmbed,
