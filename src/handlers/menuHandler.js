@@ -356,7 +356,7 @@ async function handleAddMemberSelect(interaction) {
     const customId = interaction.customId;
     const messageId = customId.split('_')[3];
     const roleIndex = interaction.values[0];
-    const roleName = interaction.component.options.find(o => o.value === roleIndex)?.label.split('. ')[1] || 'Role';
+    const roleName = interaction.component.options.find(o => o.value === roleIndex)?.label || 'Role';
 
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';

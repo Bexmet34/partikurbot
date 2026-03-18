@@ -272,25 +272,11 @@ async function handleAddMemberButton(interaction, lang) {
     const message = await interaction.channel.messages.fetch(messageId);
     if (!message) return;
 
-    const fields = message.embeds[0].fields;
-    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
-    const rollerValue = rollerFields.map(f => f.value).join('\n');
-
-
-    // Parse Roles to find empty ones
-    const roleRegex = /(?:🔴|🟡)\s*(.*?):\s*(<@(\d+)>|)/g;
-    let roles = [];
-    let match;
-    let counter = 0;
-    while ((match = roleRegex.exec(rollerValue)) !== null) {
-        roles.push({
-            name: match[1],
-            isFull: !!match[2],
-            index: counter++
-        });
-    }
-
-    const emptyRoles = roles.filter(r => !r.isFull);
+    const data = parseEmbedData(message.embeds[0], lang);
+    
+    // Map with original indices and filter for empty actual roles
+    const rolesWithIndex = data.rolesWithMembers.map((r, i) => ({ ...r, originalIndex: i }));
+    const emptyRoles = rolesWithIndex.filter(r => !r.userId && !r.role.startsWith('#'));
 
     if (emptyRoles.length === 0) {
         return await interaction.reply({
@@ -305,11 +291,12 @@ async function handleAddMemberButton(interaction, lang) {
         .setCustomId(`add_member_select_${messageId}`)
         .setPlaceholder(t('manage.select_role_to_add', lang))
         .addOptions(
-            emptyRoles.map((r) =>
-                new StringSelectMenuOptionBuilder()
-                    .setLabel(`${r.index + 1}. ${r.name}`)
-                    .setValue(`${r.index}`)
-            )
+            emptyRoles.map((r) => {
+                let displayName = r.role.includes('>') ? r.role.split('>')[0].trim() : r.role;
+                return new StringSelectMenuOptionBuilder()
+                    .setLabel(`${displayName}`) // Removed index number as per user preference
+                    .setValue(`${r.originalIndex}`);
+            })
         );
 
     await interaction.reply({
