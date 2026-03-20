@@ -67,7 +67,7 @@ function parseEmbedData(embed, lang) {
             
             const lineMatch = firstLine.match(/(?:🔴|🟡)\s*(.*?):\s*(?:<@(\d+)>|)/);
             if (lineMatch) {
-                const roleName = lineMatch[1].trim();
+                const roleName = lineMatch[1].trim().replace(/\*\*/g, '');
                 const userId = lineMatch[2] || null;
                 
                 let fullRole = roleName;
@@ -290,7 +290,7 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
             if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
         }
 
-        let line = `${emoji} ${displayRole}: ${mention}`;
+        let line = `${emoji} **${displayRole}**: ${mention}`;
         if (gearInfo) {
             line += `\n${gearInfo}`;
         }
@@ -342,7 +342,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
                 if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
             }
 
-            let line = `${emoji} ${displayRole}: ${mention}`;
+            let line = `${emoji} **${displayRole}**: ${mention}`;
             if (gearInfo) {
                 line += `\n${gearInfo}`;
             }
