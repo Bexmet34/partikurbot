@@ -5,7 +5,7 @@ const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, getActivePartyCount } = require('../services/partyManager');
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
-const { addToVoteBypass, removeFromVoteBypass } = require('../services/voteBypassManager');
+const { addToVoteBypass, removeFromVoteBypass, HARDCODED_OWNER_ID } = require('../services/voteBypassManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
@@ -170,10 +170,12 @@ async function handleWhitelistAddCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    const isOwner = interaction.user.id === config.OWNER_ID;
+    const userId = interaction.user.id;
+    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
     const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
-    if (!isOwner && !isAdmin) {
+    if (!isBotOwner && !isGuildOwner && !isAdmin) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
@@ -200,10 +202,12 @@ async function handleWhitelistRemoveCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    const isOwner = interaction.user.id === config.OWNER_ID;
+    const userId = interaction.user.id;
+    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
     const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
-    if (!isOwner && !isAdmin) {
+    if (!isBotOwner && !isGuildOwner && !isAdmin) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
@@ -419,14 +423,19 @@ async function handlePremiumAddCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    const isOwner = interaction.user.id === config.OWNER_ID;
-    if (!isOwner) {
+    const userId = interaction.user.id;
+    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
+
+    if (!isBotOwner && !isGuildOwner) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
     const targetUser = interaction.options.getUser('user');
+    // Bot owner adds GLOBAL by default, guild owner adds current guild
+    const targetGuildId = isBotOwner ? 'GLOBAL' : interaction.guildId;
 
-    if (await addToVoteBypass(targetUser.id)) {
+    if (await addToVoteBypass(targetUser.id, targetGuildId)) {
         return await safeReply(interaction, {
             content: `✅ **${targetUser.tag}** ${t('whitelist.added_premium', lang)}`,
             flags: [MessageFlags.Ephemeral]
@@ -446,14 +455,20 @@ async function handlePremiumRemoveCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
 
-    const isOwner = interaction.user.id === config.OWNER_ID;
-    if (!isOwner) {
+    const userId = interaction.user.id;
+    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
+
+    if (!isBotOwner && !isGuildOwner) {
         return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
     }
 
     const targetUser = interaction.options.getUser('user');
 
-    if (await removeFromVoteBypass(targetUser.id)) {
+    // Bot owner deletes GLOBAL by default, guild owner deletes current guild
+    const targetGuildId = isBotOwner ? 'GLOBAL' : interaction.guildId;
+
+    if (await removeFromVoteBypass(targetUser.id, targetGuildId)) {
         return await safeReply(interaction, {
             content: `✅ **${targetUser.tag}** ${t('whitelist.removed_premium', lang)}`,
             flags: [MessageFlags.Ephemeral]

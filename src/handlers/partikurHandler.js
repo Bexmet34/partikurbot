@@ -21,7 +21,7 @@ async function handleCreatePartyCommand(interaction) {
     const isOwner = interaction.user.id === interaction.guild.ownerId;
     const isDeveloper = config.WHITELIST_USERS.includes(userId);
     const whitelisted = isOwner || isDeveloper || await isWhitelisted(userId, interaction.guildId);
-    const voteBypassed = await isVoteBypassed(userId);
+    const voteBypassed = await isVoteBypassed(userId, interaction.guildId);
 
     // 1. Top.gg Vote Check (Bypass ONLY for Vote Bypass Users/Bot Owner)
     if (topggApi && !voteBypassed) {

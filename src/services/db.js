@@ -77,9 +77,11 @@ function initDb() {
                 PRIMARY KEY (guild_id, user_id)
             )`);
 
-            // Vote bypass for skip vote across all guilds
+            // Vote bypass for skip vote (per guild or GLOBAL)
             db.run(`CREATE TABLE IF NOT EXISTS vote_bypass (
-                user_id TEXT PRIMARY KEY
+                guild_id TEXT,
+                user_id TEXT,
+                PRIMARY KEY (guild_id, user_id)
             )`, (err) => {
 
 

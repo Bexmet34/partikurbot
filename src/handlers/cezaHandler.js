@@ -5,6 +5,8 @@ const {
     ButtonStyle,
     PermissionFlagsBits,
 } = require('discord.js');
+const config = require('../config/config');
+const { HARDCODED_OWNER_ID } = require('../services/voteBypassManager');
 
 const {
     getGuildSettings,
@@ -100,11 +102,13 @@ function buildPayButton(caseId, disabled = false) {
 }
 
 function yetkiVarMi(interaction, settings) {
-    const isOwner = interaction.user.id === interaction.guild.ownerId;
+    const userId = interaction.user.id;
+    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isGuildOwner = userId === interaction.guild.ownerId;
     const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
     const yetkiliRoleId = settings?.yetkiliRoleId;
     const hasYetkiliRole = yetkiliRoleId && interaction.member.roles.cache.has(yetkiliRoleId);
-    return isOwner || isAdmin || hasYetkiliRole;
+    return isBotOwner || isGuildOwner || isAdmin || hasYetkiliRole;
 }
 
 function ayarlarHazirMi(settings) {
