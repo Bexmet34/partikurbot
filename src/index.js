@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleHelpCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handleSettingsCommand } = require('./handlers/commandHandler');
+const { handleHelpCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand } = require('./handlers/commandHandler');
 
 const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
@@ -144,6 +144,10 @@ client.on('interactionCreate', async interaction => {
                 await handleWhitelistAddCommand(interaction);
             } else if (interaction.commandName === 'whitelistremove') {
                 await handleWhitelistRemoveCommand(interaction);
+            } else if (interaction.commandName === 'premiumadd') {
+                await handlePremiumAddCommand(interaction);
+            } else if (interaction.commandName === 'premiumremove') {
+                await handlePremiumRemoveCommand(interaction);
             } else if (interaction.commandName === 'settings') {
                 await handleSettingsCommand(interaction);
             } else if (interaction.commandName === 'ceza') {

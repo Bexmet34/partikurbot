@@ -1,6 +1,7 @@
 const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getActivePartyCount } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
+const { isVoteBypassed } = require('../services/voteBypassManager');
 const { getGuildConfig } = require('../services/guildConfig');
 const { t } = require('../services/i18n');
 const config = require('../config/config');
@@ -20,9 +21,10 @@ async function handleCreatePartyCommand(interaction) {
     const isOwner = interaction.user.id === interaction.guild.ownerId;
     const isDeveloper = config.WHITELIST_USERS.includes(userId);
     const whitelisted = isOwner || isDeveloper || await isWhitelisted(userId, interaction.guildId);
+    const voteBypassed = await isVoteBypassed(userId);
 
-    // 1. Top.gg Vote Check (Bypass ONLY for Bot Owner/Developer)
-    if (topggApi && !isDeveloper) {
+    // 1. Top.gg Vote Check (Bypass ONLY for Vote Bypass Users/Bot Owner)
+    if (topggApi && !voteBypassed) {
         let hasVoted = false;
         try {
             console.log(`[Top.gg] Checking vote for user: ${userId}`);

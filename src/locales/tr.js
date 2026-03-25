@@ -138,6 +138,8 @@ module.exports = {
         added: 'başarıyla beyaz listeye eklendi.',
         removed: 'başarıyla beyaz listeden çıkarıldı.',
         already_in: 'zaten beyaz listede bulunuyor.',
-        not_found: 'beyaz listede bulunamadı.'
+        not_found: 'beyaz listede bulunamadı.',
+        added_premium: 'başarıyla premium listesine (oy atlama) eklendi.',
+        removed_premium: 'başarıyla premium listesinden çıkarıldı.'
     }
 };

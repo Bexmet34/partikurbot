@@ -5,6 +5,7 @@ const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, getActivePartyCount } = require('../services/partyManager');
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
+const { addToVoteBypass, removeFromVoteBypass } = require('../services/voteBypassManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
@@ -214,6 +215,57 @@ async function handleWhitelistRemoveCommand(interaction) {
             flags: [MessageFlags.Ephemeral]
         });
     } else {
+    }
+}
+
+
+/**
+ * Handles /globalwhitelistadd command
+ */
+async function handleGlobalWhitelistAddCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    if (!isOwner) {
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
+    }
+
+    const targetUser = interaction.options.getUser('user');
+
+    if (await addToGlobalWhitelist(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** ${t('whitelist.added_global', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
+        return await safeReply(interaction, {
+            content: `❌ **${targetUser.tag}** ${t('whitelist.already_in', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+}
+
+/**
+ * Handles /globalwhitelistremove command
+ */
+async function handleGlobalWhitelistRemoveCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    if (!isOwner) {
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
+    }
+
+    const targetUser = interaction.options.getUser('user');
+
+    if (await removeFromGlobalWhitelist(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** ${t('whitelist.removed_global', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
         return await safeReply(interaction, {
             content: `❌ **${targetUser.tag}** ${t('whitelist.not_found', lang)}`,
             flags: [MessageFlags.Ephemeral]
@@ -361,6 +413,60 @@ async function handleStatsCommand(interaction) {
 }
 
 /**
+ * Handles /premiumadd command
+ */
+async function handlePremiumAddCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    if (!isOwner) {
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
+    }
+
+    const targetUser = interaction.options.getUser('user');
+
+    if (await addToVoteBypass(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** ${t('whitelist.added_premium', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
+        return await safeReply(interaction, {
+            content: `❌ **${targetUser.tag}** ${t('whitelist.already_in', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+}
+
+/**
+ * Handles /premiumremove command
+ */
+async function handlePremiumRemoveCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const isOwner = interaction.user.id === config.OWNER_ID;
+    if (!isOwner) {
+        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
+    }
+
+    const targetUser = interaction.options.getUser('user');
+
+    if (await removeFromVoteBypass(targetUser.id)) {
+        return await safeReply(interaction, {
+            content: `✅ **${targetUser.tag}** ${t('whitelist.removed_premium', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    } else {
+        return await safeReply(interaction, {
+            content: `❌ **${targetUser.tag}** ${t('whitelist.not_found', lang)}`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+}
+
+/**
  * Handles /settings command
  */
 async function handleSettingsCommand(interaction) {
@@ -399,6 +505,8 @@ module.exports = {
     handleStatsCommand,
     handleWhitelistAddCommand,
     handleWhitelistRemoveCommand,
+    handlePremiumAddCommand,
+    handlePremiumRemoveCommand,
     handleSettingsCommand,
     createMemberPageEmbed
 };

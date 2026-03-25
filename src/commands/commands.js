@@ -40,6 +40,22 @@ const commands = [
         .setName('settings')
         .setDescription('Configure guild-specific bot settings.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('premiumadd')
+        .setDescription('[Owner] Add a user to the premium list (Skip voting).')
+        .addUserOption(option =>
+            option.setName('user')
+                .setDescription('User to add to the premium list')
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('premiumremove')
+        .setDescription('[Owner] Remove a user from the premium list.')
+        .addUserOption(option =>
+            option.setName('user')
+                .setDescription('User to remove from the premium list')
+                .setRequired(true))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     // ── Ceza Sistemi ──────────────────────────────────────────────────────────
     new SlashCommandBuilder()

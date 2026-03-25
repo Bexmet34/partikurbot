@@ -138,6 +138,8 @@ module.exports = {
         added: 'successfully added to the whitelist.',
         removed: 'successfully removed from the whitelist.',
         already_in: 'is already on the whitelist.',
-        not_found: 'not found on the whitelist.'
+        not_found: 'not found on the whitelist.',
+        added_premium: 'successfully added to the premium list (Skip voting).',
+        removed_premium: 'successfully removed from the premium list.'
     }
 };
