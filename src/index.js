@@ -12,6 +12,7 @@ const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
+const { AutoPoster } = require('topgg-autoposter');
 const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
@@ -76,6 +77,17 @@ async function startBot() {
         console.error('Bot login error:', error);
         setTimeout(startBot, 5000);
     }
+}
+
+// Auto-Poster for Top.gg
+if (config.TOPGG_TOKEN) {
+    const ap = AutoPoster(config.TOPGG_TOKEN, client);
+    ap.on('posted', () => {
+        console.log(`[Top.gg] Server count posted! (${client.guilds.cache.size} servers)`);
+    });
+    ap.on('error', (err) => {
+        console.error('[Top.gg] AutoPoster Error:', err.message);
+    });
 }
 
 // Client ready event
