@@ -23,39 +23,20 @@ async function handleCreatePartyCommand(interaction) {
     const whitelisted = isOwner || isDeveloper || await isWhitelisted(userId, interaction.guildId);
     const voteBypassed = await isVoteBypassed(userId, interaction.guildId);
 
-    // 1. Top.gg Vote Check (Bypass ONLY for Vote Bypass Users/Bot Owner)
+    // 1. Top.gg Vote Check (Informational Reminder - Non-blocking)
     if (topggApi && !voteBypassed) {
-        let hasVoted = false;
         try {
-            console.log(`[Top.gg] Checking vote for user: ${userId}`);
-            hasVoted = await topggApi.hasVoted(userId);
-            console.log(`[Top.gg] User ${userId} hasVoted result: ${hasVoted}`);
-        } catch (error) {
-            // 404 = kullanıcı hiç oy atmamış, bu beklenen bir durum
-            if (error.message?.includes('404') || error.status === 404) {
-                console.warn(`[Top.gg] User ${userId} has not voted (404 Not Found - expected).`);
-            } else {
-                console.error(`[Top.gg] API Error for ${userId}:`, error.message);
+            console.log(`[Top.gg] Checking vote status for informational purposes: ${userId}`);
+            const hasVoted = await topggApi.hasVoted(userId).catch(() => false);
+            
+            if (!hasVoted) {
+                // If the user hasn't voted, we can send a reminder as a follow-up or just mention it
+                // But for now, we'll just proceed as per request "don't block"
+                console.log(`[Top.gg] User ${userId} hasn't voted. Proceeding anyway.`);
             }
-            hasVoted = false;
+        } catch (error) {
+            console.error(`[Top.gg] API Error (Non-blocking):`, error.message);
         }
-
-        if (!hasVoted) {
-            const voteRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setLabel(t('party.vote_link_text', lang))
-                    .setStyle(ButtonStyle.Link)
-                    .setURL('https://top.gg/bot/1082239904169336902/vote')
-            );
-
-            return await interaction.reply({
-                content: t('party.vote_required', lang),
-                components: [voteRow],
-                flags: [MessageFlags.Ephemeral]
-            });
-        }
-    } else if (!topggApi && !isDeveloper) {
-        console.warn('[Top.gg] API not initialized! Check TOPGG_TOKEN in .env');
     }
 
     const partyCount = getActivePartyCount(userId);

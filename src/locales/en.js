@@ -61,6 +61,7 @@ module.exports = {
         cmd_members: 'Lists your guild\'s active members page by page.',
         cmd_settings: 'Defines the guild name and Albion Guild ID for the system.',
         cmd_help: 'Opens this interactive menu.',
+        cmd_vote: 'Provides the link to vote for the bot and support us.',
         donate_button: '🎁 Support / Donate'
     },
     settings: {
@@ -141,5 +142,11 @@ module.exports = {
         not_found: 'not found on the whitelist.',
         added_premium: 'successfully added to the premium list (Skip voting).',
         removed_premium: 'successfully removed from the premium list.'
+    },
+    vote: {
+        title: '🗳️ Veyronix | Vote',
+        description: 'You can support us and contribute to our development by voting for our bot.\n\nYou can continue your support by voting every **12 hours**. Thank you! ❤️',
+        button_text: 'Vote Now',
+        info_reminder: '💡 **Enjoying the Bot?**\nYou can show your support by using the `/vote` command to vote for us!'
     }
 };

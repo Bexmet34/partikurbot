@@ -513,8 +513,35 @@ async function handleSettingsCommand(interaction) {
     });
 }
 
+/**
+ * Handles /vote command
+ */
+async function handleVoteCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const embed = new EmbedBuilder()
+        .setTitle(t('vote.title', lang))
+        .setDescription(t('vote.description', lang))
+        .setColor('#FF0055')
+        .setThumbnail('https://top.gg/images/botidls/1082239904169336902.png'); // Example bot icon if available
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setLabel(t('vote.button_text', lang))
+            .setStyle(ButtonStyle.Link)
+            .setURL('https://top.gg/bot/1082239904169336902/vote')
+    );
+
+    return await safeReply(interaction, {
+        embeds: [embed],
+        components: [row]
+    });
+}
+
 module.exports = {
     handleHelpCommand,
+    handleVoteCommand,
     handleClosePartyCommand,
     handleMembersCommand,
     handleStatsCommand,

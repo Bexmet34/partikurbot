@@ -61,6 +61,7 @@ module.exports = {
         cmd_members: 'Loncanızdaki aktif üyeleri sayfa sayfa listeler.',
         cmd_settings: 'Sunucu adını ve Albion Lonca ID\'sini sisteme tanımlar.',
         cmd_help: 'Bu interaktif menüyü açar.',
+        cmd_vote: 'Botumuza destek olmak için oy verme linkini gönderir.',
         donate_button: '🎁 Bağış Yap'
     },
     settings: {
@@ -141,5 +142,11 @@ module.exports = {
         not_found: 'beyaz listede bulunamadı.',
         added_premium: 'başarıyla premium listesine (oy atlama) eklendi.',
         removed_premium: 'başarıyla premium listesinden çıkarıldı.'
+    },
+    vote: {
+        title: '🗳️ Veyronix | Oy Ver',
+        description: 'Botumuza oy vererek bize destek olabilir ve gelişmemize katkıda bulunabilirsiniz.\n\nHer **12 saatte bir** oy vererek desteğinizi sürdürebilirsiniz. Teşekkürler! ❤️',
+        button_text: 'Hemen Oy Ver',
+        info_reminder: '💡 **Botu Beğendin mi?**\nDestek olmak için `/vote` komutunu kullanarak bize oy verebilirsin!'
     }
 };

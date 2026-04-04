@@ -216,6 +216,7 @@ function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
             .setDescription(t('help.desc_page_1', lang))
             .addFields(
                 { name: '🏗️ /createparty', value: t('help.cmd_createparty', lang), inline: false },
+                { name: '🗳️ /vote', value: t('help.cmd_vote', lang), inline: false },
                 { name: 'ℹ️ /help', value: t('help.cmd_help', lang), inline: false },
                 { name: '🔒 /closeparty', value: lang === 'tr' ? 'Aktif partilerinizi manuel olarak kapatmanızı sağlar.' : 'Manually end your active parties.', inline: false },
                 { name: '👥 /members', value: t('help.cmd_members', lang), inline: false },

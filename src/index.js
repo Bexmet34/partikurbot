@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleHelpCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand } = require('./handlers/commandHandler');
+const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand } = require('./handlers/commandHandler');
 
 const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
@@ -132,6 +132,8 @@ client.on('interactionCreate', async interaction => {
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'help') {
                 await handleHelpCommand(interaction);
+            } else if (interaction.commandName === 'vote') {
+                await handleVoteCommand(interaction);
             } else if (interaction.commandName === 'createparty') {
                 await handleCreatePartyCommand(interaction);
             } else if (interaction.commandName === 'closeparty') {

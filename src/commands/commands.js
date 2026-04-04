@@ -5,6 +5,9 @@ const commands = [
         .setName('createparty')
         .setDescription('Create a dynamic party recruitment form.'),
     new SlashCommandBuilder()
+        .setName('vote')
+        .setDescription('Support the bot by voting on Top.gg.'),
+    new SlashCommandBuilder()
         .setName('help')
         .setDescription('Shows bot commands and assistance.'),
     new SlashCommandBuilder()
