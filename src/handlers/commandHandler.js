@@ -539,6 +539,34 @@ async function handleVoteCommand(interaction) {
     });
 }
 
+/**
+ * Handles /servers command (Owner Only)
+ */
+async function handleServersCommand(interaction) {
+    const isBotOwner = interaction.user.id === config.OWNER_ID || (config.WHITELIST_USERS && config.WHITELIST_USERS.includes(interaction.user.id));
+    
+    if (!isBotOwner) {
+        return await safeReply(interaction, { 
+            content: '❌ Bu komutu sadece bot yetkilisi kullanabilir.', 
+            flags: [MessageFlags.Ephemeral] 
+        });
+    }
+
+    const guilds = interaction.client.guilds.cache;
+    const guildList = guilds.map(g => `• **${g.name}** (${g.id}) - ${g.memberCount} üye`).join('\n');
+
+    const embed = new EmbedBuilder()
+        .setTitle('🏢 Sunucu Listesi')
+        .setDescription(`Toplam **${guilds.size}** sunucuda bulunuyorum.\n\n${guildList.length > 2000 ? guildList.substring(0, 1900) + '...' : guildList}`)
+        .setColor('#2ECC71')
+        .setThumbnail(`attachment://${LOGO_NAME}`);
+
+    return await safeReply(interaction, {
+        embeds: [embed],
+        flags: [MessageFlags.Ephemeral]
+    });
+}
+
 module.exports = {
     handleHelpCommand,
     handleVoteCommand,
@@ -550,6 +578,7 @@ module.exports = {
     handlePremiumAddCommand,
     handlePremiumRemoveCommand,
     handleSettingsCommand,
+    handleServersCommand,
     createMemberPageEmbed
 };
 

@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand } = require('./handlers/commandHandler');
+const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand, handleServersCommand } = require('./handlers/commandHandler');
 
 const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
@@ -168,6 +168,8 @@ client.on('interactionCreate', async interaction => {
                 await handleCezaGecmisCommand(interaction);
             } else if (interaction.commandName === 'ceza-ayar') {
                 await handleCezaAyarCommand(interaction);
+            } else if (interaction.commandName === 'servers') {
+                await handleServersCommand(interaction);
             }
         } else if (interaction.isButton()) {
             // Önce ceza butonunu kontrol et

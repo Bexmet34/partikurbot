@@ -60,6 +60,11 @@ const commands = [
                 .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+    new SlashCommandBuilder()
+        .setName('servers')
+        .setDescription('[Owner] Display a list of servers the bot is in.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
     // ── Ceza Sistemi ──────────────────────────────────────────────────────────
     new SlashCommandBuilder()
         .setName('ceza')
