@@ -18,11 +18,7 @@ const { t } = require('../services/i18n');
  */
 async function handleHelpCommand(interaction) {
 
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-    const guildName = guildConfig?.guild_name || 'Albion';
-
-    const embed = createHelpEmbed(0, guildName, lang);
+    const embed = createHelpEmbed(0, interaction.guild, lang);
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
@@ -281,7 +277,8 @@ async function handleGlobalWhitelistRemoveCommand(interaction) {
 /**
  * Pagination helper for member list
  */
-function createMemberPageEmbed(members, page = 0, guildName = 'Albion', lang = 'tr') {
+function createMemberPageEmbed(members, page = 0, guild = null, lang = 'tr') {
+    const guildName = guild?.name || 'Albion';
     const pageSize = 20;
     const start = page * pageSize;
     const end = start + pageSize;
@@ -290,9 +287,13 @@ function createMemberPageEmbed(members, page = 0, guildName = 'Albion', lang = '
 
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} ${t('members.guild_members', lang)}`)
-        .setColor('#2ECC71')
+        .setColor('#2ECC71');
 
-        .setDescription(`**${t('common.total_members', lang)}:** ${members.length}\n**${t('common.page', lang)}:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
+
+    embed.setDescription(`**${t('common.total_members', lang)}:** ${members.length}\n**${t('common.page', lang)}:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
 
     return embed;
 }
@@ -317,7 +318,7 @@ async function handleMembersCommand(interaction) {
         // Sort alphabetically
         members.sort((a, b) => a.Name.localeCompare(b.Name));
 
-        const embed = createMemberPageEmbed(members, 0, guildConfig.guild_name, lang);
+        const embed = createMemberPageEmbed(members, 0, interaction.guild, lang);
 
 
         const row = new ActionRowBuilder().addComponents(
@@ -496,6 +497,10 @@ async function handleSettingsCommand(interaction) {
             { name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true }
         );
 
+    if (interaction.guild && interaction.guild.iconURL) {
+        embed.setThumbnail(interaction.guild.iconURL());
+    }
+
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId('settings_lang_select')
         .setPlaceholder('Bir dil seçin...')
@@ -523,8 +528,13 @@ async function handleVoteCommand(interaction) {
     const embed = new EmbedBuilder()
         .setTitle(t('vote.title', lang))
         .setDescription(t('vote.description', lang))
-        .setColor('#FF0055')
-        .setThumbnail('https://top.gg/images/botidls/1082239904169336902.png'); // Example bot icon if available
+        .setColor('#FF0055');
+
+    if (interaction.guild && interaction.guild.iconURL) {
+        embed.setThumbnail(interaction.guild.iconURL());
+    } else {
+        embed.setThumbnail('https://top.gg/images/botidls/1082239904169336902.png'); // Fallback to bot icon
+    }
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

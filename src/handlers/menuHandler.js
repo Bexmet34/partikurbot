@@ -207,7 +207,7 @@ async function handleEditModal(interaction) {
 
     const ownerId = oldData.ownerId;
 
-    const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, guildName, lang, ownerId);
+    const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, interaction.guild, lang, ownerId);
     embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
     addFooterFields(embed, filledCount, totalCount, lang);
 
@@ -256,11 +256,8 @@ async function handleKickMember(interaction) {
     const filledCount = actualRoles.filter(r => r.userId).length;
     const totalCount = actualRoles.length;
 
-    const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
+    const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, interaction.guild, lang, data.ownerId);
     embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-
-    // Removed thumbnail
-
 
     addFooterFields(embed, filledCount, totalCount, lang);
 
@@ -294,12 +291,8 @@ async function finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, 
     const { createPartikurEmbed, buildRolesFields, buildWaitlistField, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents } = require('../builders/componentBuilder');
 
-    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
+    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, message.guild, lang, data.ownerId);
     newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, message.guild));
-    
-    if (message.embeds[0].thumbnail?.url) {
-        // newEmbed.setThumbnail(message.embeds[0].thumbnail.url);
-    }
     
     const waitlistField = buildWaitlistField(multiRoleWaitlist, rolesWithMembers, lang);
     if (waitlistField) {
@@ -551,11 +544,8 @@ async function handleAddMemberUserSelect(interaction) {
     const filledCount = actualRoles.filter(r => r.userId).length;
     const totalCount = actualRoles.length;
 
-    const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
+    const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, interaction.guild, lang, data.ownerId);
     embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-
-    // Removed thumbnail
-
 
     addFooterFields(embed, filledCount, totalCount, lang);
 

@@ -31,7 +31,7 @@ async function handlePartyButtons(interaction) {
     if (customId.startsWith('help_page_')) {
         const pageIndex = parseInt(customId.split('_')[2]);
 
-        const newEmbed = createHelpEmbed(pageIndex, guildName, lang);
+        const newEmbed = createHelpEmbed(pageIndex, interaction.guild, lang);
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(pageIndex === 0 ? ButtonStyle.Primary : ButtonStyle.Secondary),
@@ -101,7 +101,7 @@ async function handlePartyButtons(interaction) {
             const members = await getEuropeGuildMembers(guildId);
             members.sort((a, b) => a.Name.localeCompare(b.Name));
 
-            const newEmbed = createMemberPageEmbed(members, newPage, guildConfig.guild_name, lang);
+            const newEmbed = createMemberPageEmbed(members, newPage, interaction.guild, lang);
 
             const totalPages = Math.ceil(members.length / 20);
 
@@ -171,7 +171,7 @@ async function handlePartyButtons(interaction) {
         const filledCount = rolesWithMembers.filter(r => r.userId).length;
         const totalCount = rolesWithMembers.length;
 
-        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId, partyTime);
+        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, interaction.guild, lang, ownerId, partyTime);
         newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
 
         // Removed thumbnail

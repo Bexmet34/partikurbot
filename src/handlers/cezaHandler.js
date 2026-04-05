@@ -47,13 +47,13 @@ function formatStatus(status) {
     return 'Ödenmedi ❌';
 }
 
-function buildCezaEmbed({ caseId, userId, moderatorId, aciklama, ucret, status, paidBy = null, paidAt = null }) {
+function buildCezaEmbed({ caseId, userId, moderatorId, aciklama, ucret, status, guild = null, paidBy = null, paidAt = null }) {
     const paidText =
         status === 'paid'
             ? `Ödendi ✅${paidBy ? `\nOnaylayan: <@${paidBy}>` : ''}${paidAt ? `\nTarih: <t:${Math.floor(new Date(paidAt).getTime() / 1000)}:F>` : ''}`
             : 'Ödenmedi ❌';
 
-    return new EmbedBuilder()
+    const embed = new EmbedBuilder()
         .setColor(status === 'paid' ? 0x22c55e : 0xef4444)
         .setTitle(status === 'paid' ? '✅ Ceza Ödendi' : '🔨 Yeni Ceza')
         .setDescription(`<@${userId}> kullanıcısına ceza uygulandı.`)
@@ -66,10 +66,16 @@ function buildCezaEmbed({ caseId, userId, moderatorId, aciklama, ucret, status, 
             { name: 'Durum', value: paidText, inline: true }
         )
         .setTimestamp();
+
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
+
+    return embed;
 }
 
-function buildUserDMEmbed({ caseId, moderatorId, aciklama, ucret }) {
-    return new EmbedBuilder()
+function buildUserDMEmbed({ caseId, moderatorId, aciklama, ucret, guild = null }) {
+    const embed = new EmbedBuilder()
         .setColor(0xef4444)
         .setTitle('📩 Hakkınızda Ceza Kaydı Oluşturuldu')
         .setDescription('Sunucuda hakkınızda bir ceza işlemi oluşturuldu.')
@@ -80,6 +86,12 @@ function buildUserDMEmbed({ caseId, moderatorId, aciklama, ucret }) {
             { name: 'Yetkili', value: `<@${moderatorId}>`, inline: true }
         )
         .setTimestamp();
+
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
+
+    return embed;
 }
 
 function buildPaidDMEmbed({ caseId, paidBy }) {
@@ -167,6 +179,7 @@ async function handleCezaButton(interaction, client) {
         aciklama: updated.reason,
         ucret: updated.fee,
         status: updated.status,
+        guild: interaction.guild,
         paidBy: updated.paidBy,
         paidAt: updated.paidAt,
     });
@@ -259,6 +272,11 @@ async function handleCezaAyarCommand(interaction) {
                 { name: 'Yetkili Rolü', value: settings.yetkiliRoleId ? `<@&${settings.yetkiliRoleId}>` : 'Ayarlanmadı', inline: true }
             )
             .setTimestamp();
+
+        if (interaction.guild && interaction.guild.iconURL) {
+            embed.setThumbnail(interaction.guild.iconURL());
+        }
+
         return interaction.reply({ embeds: [embed], ephemeral: true });
     }
 }
@@ -336,7 +354,7 @@ async function handleCezaCommand(interaction) {
         console.error('[CezaHandler] Nick değiştirme hatası:', e);
     }
 
-    const embed = buildCezaEmbed({ caseId, userId: user.id, moderatorId: interaction.user.id, aciklama, ucret, status: 'active' });
+    const embed = buildCezaEmbed({ caseId, userId: user.id, moderatorId: interaction.user.id, aciklama, ucret, status: 'active', guild: interaction.guild });
     const row = buildPayButton(caseId, false);
 
     const msg = await cezaChannel.send({ content: `${user}`, embeds: [embed], components: [row] });
@@ -359,7 +377,7 @@ async function handleCezaCommand(interaction) {
     });
 
     try {
-        await user.send({ embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret })] });
+        await user.send({ embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret, guild: interaction.guild })] });
         dmSent = true;
     } catch {
         dmSent = false;
@@ -413,6 +431,10 @@ async function handleCezaGecmisCommand(interaction) {
                 : `Toplam ${history.length} kayıt.`,
         })
         .setTimestamp();
+
+    if (interaction.guild && interaction.guild.iconURL) {
+        embed.setThumbnail(interaction.guild.iconURL());
+    }
 
     return interaction.reply({ embeds: [embed], ephemeral: true });
 }

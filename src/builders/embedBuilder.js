@@ -128,7 +128,8 @@ function parseEmbedData(embed, lang) {
 /**
  * Creates a PVE embed
  */
-function createEmbed(title, details, content, roles, isClosed = false, guildName = 'Albion', lang = 'tr') {
+function createEmbed(title, details, content, roles, isClosed = false, guild = null, lang = 'tr') {
+    const guildName = guild?.name || 'Albion';
     const cleanTitle = title.replace(new RegExp(`^🛡️ ${guildName} \\| `), '').replace(/ \[.*?\]$/, '');
 
     // Build description with better formatting
@@ -138,8 +139,13 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} | ${cleanTitle}${isClosed ? ` [${t('common.closed', lang)}]` : ''}`)
         .setDescription(description)
-        .setColor(isClosed ? '#808080' : '#F1C40F')
-        .addFields(
+        .setColor(isClosed ? '#808080' : '#F1C40F');
+
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
+
+    embed.addFields(
             { name: `👥 **${t('common.party_roster', lang)}**`, value: '\u200b', inline: false },
             {
                 name: `${roles.tank === '-' ? '🟡' : '🔴'} 1. Tank:`,
@@ -171,7 +177,7 @@ function createEmbed(title, details, content, roles, isClosed = false, guildName
 /**
  * Creates a custom party embed
  */
-function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guildName = 'Albion', lang = 'tr', ownerId = null) {
+function createPartikurEmbed(header, rolesList, description = '', content = '', currentCount = 0, guild = null, lang = 'tr', ownerId = null) {
     let sanitizedHeader = header ? cleanTitle(header) : '';
     
     // Explicitly check for generic titles
@@ -189,6 +195,10 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
     const embed = new EmbedBuilder()
         .setTitle(sanitizedHeader)
         .setColor(12770100);
+
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
 
     const leaderText = ownerId ? `<@${ownerId}>` : t('common.not_set', lang);
     const placeText = content || t('common.not_set', lang);
@@ -226,14 +236,17 @@ function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
 /**
  * Creates a paginated help embed
  */
-function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
+function createHelpEmbed(page = 0, guild = null, lang = 'tr') {
+    const guildName = guild?.name || 'Albion';
+    const thumbnail = guild?.iconURL() || 'https://i.imgur.com/8Km9tLL.png';
+
     const embeds = [
         // Page 0: Overview (General Information)
         new EmbedBuilder()
             .setTitle(t('help.title_page_0', lang))
             .setColor(15844367) // #F1C40F
             .setDescription(t('help.desc_page_0', lang))
-            .setThumbnail('https://i.imgur.com/8Km9tLL.png')
+            .setThumbnail(thumbnail)
             .addFields(
                 { name: t('help.field_features_title', lang), value: t('help.field_features_value', lang), inline: false },
                 { name: t('help.field_categories_title', lang), value: t('help.field_categories_value', lang), inline: false },
@@ -284,12 +297,17 @@ function createHelpEmbed(page = 0, guildName = 'Albion', lang = 'tr') {
 /**
  * Creates the donation embed
  */
-function createDonateEmbed(lang = 'tr') {
+function createDonateEmbed(lang = 'tr', guild = null) {
     const embed = new EmbedBuilder()
         .setTitle(t('help.donate_title', lang))
         .setDescription(t('help.donate_description', lang))
-        .setColor('#E91E63')
-        .addFields(
+        .setColor('#E91E63');
+
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL());
+    }
+
+    embed.addFields(
             { name: '\u200b', value: t('help.donate_bank_info', lang) }
         )
         // .setImage('QR_CODE_IMAGE_URL_HERE') // QR kod görselini buraya ekleyebilirsiniz
