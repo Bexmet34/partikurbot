@@ -19,6 +19,7 @@ const { t } = require('../services/i18n');
  * Handles join and leave button interactions
  */
 async function handlePartyButtons(interaction) {
+    const { finalizeRoleUpdate, handleOpenSettings } = require('./menuHandler');
     const customId = interaction.customId;
     const message = interaction.message;
     if (!message.embeds[0]) return;
@@ -179,36 +180,14 @@ async function handlePartyButtons(interaction) {
             }
         }
 
-        // Reconstruct Embed
-        const filledCount = rolesWithMembers.filter(r => r.userId).length;
-        const totalCount = rolesWithMembers.length;
-
-        const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, interaction.guild, lang, ownerId, partyTime);
-        newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-
-        // Removed thumbnail
-
-
-        addFooterFields(newEmbed, filledCount, totalCount, lang);
-
-        // Update components — select menu mode or button mode
-        let newComponents;
-        if (isSelectMenuMode(rolesWithMembers.length)) {
-            // Select menu mode: regenerate components with updated member state
-            newComponents = createCustomPartyComponents(
-                rolesWithMembers.map(r => r.role),
-                ownerId,
-                lang,
-                rolesWithMembers,
-                interaction.guild || interaction.client
-            );
-        } else {
-            // Button mode: update existing button states
-            newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
-                name: r.role,
-                value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-            })));
+        let multiRoleWaitlist = data.multiRoleWaitlist || [];
+        // If user left, remove from waitlist. If user joined/switched, their old swap choice is still valid unless we want them to re-pick.
+        // The user complained that roles 'disappear', so I will ONLY remove if they leave entirely.
+        if (customId === 'leave') {
+            multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId);
         }
+
+        const { newEmbed, newComponents } = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
 
         await interaction.update({ 
             embeds: [newEmbed], 
@@ -262,6 +241,7 @@ async function handlePartyButtons(interaction) {
     }
 
     if (customId.startsWith('open_settings_')) {
+        const { handleOpenSettings } = require('./menuHandler');
         await handleOpenSettings(interaction, lang);
     }
 

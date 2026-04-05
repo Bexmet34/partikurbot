@@ -206,38 +206,15 @@ async function handleEditModal(interaction) {
         };
     });
 
-    const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
-    const { createCustomPartyComponents, updateButtonStates } = require('../builders/componentBuilder');
-
-    const actualRoles = rolesWithMembers.filter(isActualRole);
-    const filledCount = actualRoles.filter(r => r.userId).length;
-    const totalCount = actualRoles.length;
-
-    const ownerId = oldData.ownerId;
-
-    const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, interaction.guild, lang, ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-    addFooterFields(embed, filledCount, totalCount, lang);
-
-    // Update DB
-    db.run('UPDATE parties SET title = ? WHERE message_id = ?', [header, originalMsgId]).catch(e => console.error(e));
-
-    // Select menu mode or button mode
-    let finalComponents;
-    if (isSelectMenuMode(newRolesList.length)) {
-        finalComponents = createCustomPartyComponents(newRolesList, ownerId, lang, rolesWithMembers, interaction.guild || interaction.client);
-    } else {
-        const { updateButtonStates } = require('../builders/componentBuilder');
-        const components = createCustomPartyComponents(newRolesList, ownerId, lang, null, interaction.guild || interaction.client);
-        finalComponents = updateButtonStates(components, rolesWithMembers.map(r => ({
-            name: r.role,
-            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-        })));
-    }
+    const multiRoleWaitlist = oldData.multiRoleWaitlist || [];
+    const { newEmbed, newComponents } = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, oldData, lang, guildName, {
+        title: header,
+        description: description
+    });
 
     await message.edit({ 
-        embeds: [embed], 
-        components: finalComponents,
+        embeds: [newEmbed], 
+        components: newComponents,
         files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
     });
     await interaction.reply({ content: lang === 'tr' ? '✅ Parti başarıyla güncellendi.' : '✅ Party updated successfully.', flags: [MessageFlags.Ephemeral] });
@@ -261,53 +238,32 @@ async function handleKickMember(interaction) {
     rolesWithMembers = rolesWithMembers.map(r => r.userId === userId ? { ...r, userId: null } : r);
     db.run('UPDATE party_members SET user_id = NULL WHERE party_id = (SELECT id FROM parties WHERE message_id = ?) AND user_id = ?', [message.id, userId]).catch(e => console.error(e));
 
-    const { createPartikurEmbed, buildRolesValue, addFooterFields } = require('../builders/embedBuilder');
-    const { createCustomPartyComponents, updateButtonStates } = require('../builders/componentBuilder');
-
-    const actualRoles = rolesWithMembers.filter(isActualRole);
-    const filledCount = actualRoles.filter(r => r.userId).length;
-    const totalCount = actualRoles.length;
-
-    const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, interaction.guild, lang, data.ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-
-    addFooterFields(embed, filledCount, totalCount, lang);
-
-    // Select menu mode or button mode
-    let newComponents;
-    if (isSelectMenuMode(rolesWithMembers.length)) {
-        newComponents = createCustomPartyComponents(
-            rolesWithMembers.map(r => r.role),
-            data.ownerId,
-            lang,
-            rolesWithMembers,
-            interaction.guild || interaction.client
-        );
-    } else {
-        newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
-            name: r.role,
-            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-        })));
-    }
+    const isActualRole = (r) => r.role && !r.role.startsWith('#HEADER:') && !r.role.startsWith('#');
+    const multiRoleWaitlist = data.multiRoleWaitlist || [];
+    const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
 
     await message.edit({ 
-        embeds: [embed], 
-        components: newComponents,
+        embeds: [allocationResult.newEmbed], 
+        components: allocationResult.newComponents,
         files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
     });
     await interaction.update({ content: lang === 'tr' ? '✅ Kullanıcı çıkarıldı.' : '✅ Member removed.', components: [], flags: [MessageFlags.Ephemeral] });
 }
 
-async function finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName) {
+async function finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName, overrides = {}) {
     const isActualRole = (r) => r.role && !r.role.startsWith('#HEADER:') && !r.role.startsWith('#');
     const actualRoles = rolesWithMembers.filter(isActualRole);
     let filledCount = actualRoles.filter(r => r.userId).length;
     const totalCount = actualRoles.length;
 
+    const title = overrides.title || message.embeds[0].title;
+    const description = overrides.description !== undefined ? overrides.description : data.description;
+    const ownerId = overrides.ownerId || data.ownerId;
+
     const { createPartikurEmbed, buildRolesFields, buildWaitlistField, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents } = require('../builders/componentBuilder');
 
-    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, message.guild, lang, data.ownerId);
+    const newEmbed = createPartikurEmbed(title, rolesWithMembers.map(r => r.role), description, '', filledCount, message.guild, lang, ownerId);
     newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, message.guild));
     
     const waitlistField = buildWaitlistField(multiRoleWaitlist, rolesWithMembers, lang);
@@ -567,36 +523,12 @@ async function handleAddMemberUserSelect(interaction) {
     db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?',
         [targetUserId, roleName, messageId]).catch(e => console.error(e));
 
-    // Reconstruct Embed
-    const actualRoles = rolesWithMembers.filter(isActualRole);
-    const filledCount = actualRoles.filter(r => r.userId).length;
-    const totalCount = actualRoles.length;
-
-    const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, interaction.guild, lang, data.ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
-
-    addFooterFields(embed, filledCount, totalCount, lang);
-
-    // Update components
-    let newComponents;
-    if (isSelectMenuMode(rolesWithMembers.length)) {
-        newComponents = createCustomPartyComponents(
-            rolesWithMembers.map(r => r.role),
-            data.ownerId,
-            lang,
-            rolesWithMembers,
-            interaction.guild || interaction.client
-        );
-    } else {
-        newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
-            name: r.role,
-            value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
-        })));
-    }
+    const multiRoleWaitlist = data.multiRoleWaitlist || [];
+    const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
 
     await message.edit({ 
-        embeds: [embed], 
-        components: newComponents,
+        embeds: [allocationResult.newEmbed], 
+        components: allocationResult.newComponents,
         files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
     });
     await interaction.update({ content: `✅ ${t('manage.member_added', lang)}`, components: [], flags: [MessageFlags.Ephemeral] });
@@ -612,5 +544,6 @@ module.exports = {
     handleAddMemberUserSelect,
     handleEditOption,
     handleManageMembersOption,
-    handleCloseOption
+    handleCloseOption,
+    finalizeRoleUpdate
 };
