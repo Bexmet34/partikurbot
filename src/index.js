@@ -89,12 +89,21 @@ if (config.TOPGG_TOKEN) {
 }
 
 // Client ready event
-client.once('clientReady', async (c) => {
-    console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
-    console.log('\x1b[32m%s\x1b[0m', `🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString()})`);
-    console.log('\x1b[35m%s\x1b[0m', `🌍 Service active on ${c.guilds.cache.size} servers.`);
-    console.log('\x1b[36m%s\x1b[0m', '-------------------------------------------');
+client.once('ready', async (c) => {
+    console.log('-------------------------------------------');
+    console.log(`🚀 ${client.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
+    console.log(`🌍 Service active on ${client.guilds.cache.size} servers.`);
+    console.log('-------------------------------------------');
 
+    // Sunucuları Supabase ile senkronize et (Otomatik Import)
+    const { getSubscription } = require('./services/subscriptionService');
+    client.guilds.cache.forEach(async (guild) => {
+        try {
+            await getSubscription(guild.id, guild.name, guild.ownerId);
+        } catch (err) {
+            // Sessizce devam et
+        }
+    });
 
     // Set activity safely
     try {
