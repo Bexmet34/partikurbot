@@ -28,5 +28,9 @@ module.exports = {
 
     // Top.gg Configuration
     TOPGG_TOKEN: process.env.TOPGG_TOKEN,
+
+    // Supabase Configuration
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_KEY: process.env.SUPABASE_KEY,
 };
 

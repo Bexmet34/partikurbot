@@ -10,10 +10,29 @@ const { Api } = require('@top-gg/sdk');
 // Initialize Top.gg API if token exists
 const topggApi = config.TOPGG_TOKEN ? new Api(config.TOPGG_TOKEN) : null;
 
+const { isSubscriptionActive } = require('../services/subscriptionService');
+const { EmbedBuilder } = require('discord.js');
+
 /**
  * Handles /createparty command
  */
 async function handleCreatePartyCommand(interaction) {
+    // 0. Subscription Check
+    const active = await isSubscriptionActive(interaction.guildId, interaction.guild.name, interaction.guild.ownerId);
+    
+    if (!active) {
+        const expiredEmbed = new EmbedBuilder()
+            .setTitle('❌ Abonelik Süresi Doldu')
+            .setDescription(`Bu sunucunun bot kullanım süresi (veya 3 günlük deneme süresi) sona ermiştir.\n\nSüreyi uzatmak ve botu kullanmaya devam etmek için lütfen bot sahibi ile iletişime geçin.`)
+            .setColor('#FF0000')
+            .setFooter({ text: 'Veyronix Party Master • Subscription System' });
+
+        return await interaction.reply({
+            embeds: [expiredEmbed],
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
     const guildConfig = await getGuildConfig(interaction.guildId);
 
     const lang = guildConfig?.language || 'tr';

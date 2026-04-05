@@ -569,6 +569,50 @@ async function handleServersCommand(interaction) {
     });
 }
 
+const { addSubscriptionDays, setUnlimitedSubscription, getSubscription } = require('../services/subscriptionService');
+
+/**
+ * Handles /subscription command (Owner Only)
+ */
+async function handleSubscriptionCommand(interaction) {
+    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    
+    if (!isBotOwner) {
+        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
+    }
+
+    const subcommand = interaction.options.getSubcommand();
+    const guildId = interaction.options.getString('guild_id');
+
+    if (subcommand === 'ver') {
+        const days = interaction.options.getInteger('gun');
+        const success = await addSubscriptionDays(guildId, days);
+        return await safeReply(interaction, { 
+            content: success ? `✅ **${guildId}** ID'li sunucuya **${days}** gün eklendi.` : `❌ İşlem başarısız (Sunucu bulunamadı veya DB hatası).`, 
+            flags: [MessageFlags.Ephemeral] 
+        });
+
+    } else if (subcommand === 'durum') {
+        const sub = await getSubscription(guildId, 'System', 'System'); // Passing 'System' as default
+        if (!sub) return await safeReply(interaction, { content: '❌ Sunucu abonelik bilgisi bulunamadı.', flags: [MessageFlags.Ephemeral] });
+
+        const embed = new EmbedBuilder()
+            .setTitle(`🏢 Sunucu Abonelik Bilgisi`)
+            .setDescription(`**Sunucu:** ${sub.guild_name} (${sub.guild_id})\n**Sınırsız mı:** ${sub.is_unlimited ? 'Evet ✅' : 'Hayır ❌'}\n**Durum:** ${sub.is_active ? 'Aktif ✅' : 'Devre Dışı ❌'}\n**Bitiş Tarihi:** ${new Date(sub.expires_at).toLocaleString('tr-TR')}`)
+            .setColor('#3498DB');
+
+        return await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
+
+    } else if (subcommand === 'sinirsiz') {
+        const value = interaction.options.getBoolean('aktif');
+        const success = await setUnlimitedSubscription(guildId, value);
+        return await safeReply(interaction, { 
+            content: success ? `✅ **${guildId}** sunucusu için sınırsız mod: **${value ? 'AÇIK' : 'KAPALI'}**.` : `❌ İşlem başarısız.`, 
+            flags: [MessageFlags.Ephemeral] 
+        });
+    }
+}
+
 module.exports = {
     handleHelpCommand,
     handleVoteCommand,
@@ -581,6 +625,7 @@ module.exports = {
     handlePremiumRemoveCommand,
     handleSettingsCommand,
     handleServersCommand,
+    handleSubscriptionCommand,
     createMemberPageEmbed
 };
 

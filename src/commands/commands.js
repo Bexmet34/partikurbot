@@ -65,6 +65,25 @@ const commands = [
         .setDescription('[Owner] Display a list of servers the bot is in.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+    new SlashCommandBuilder()
+        .setName('subscription')
+        .setDescription('[Owner] Manage guild subscriptions.')
+        .addSubcommand(sub =>
+            sub.setName('ver')
+                .setDescription('Add days to guild subscription')
+                .addStringOption(opt => opt.setName('guild_id').setDescription('Guild ID').setRequired(true))
+                .addIntegerOption(opt => opt.setName('gun').setDescription('Days to add').setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName('durum')
+                .setDescription('Check guild subscription status')
+                .addStringOption(opt => opt.setName('guild_id').setDescription('Guild ID').setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName('sinirsiz')
+                .setDescription('Set guild subscription to unlimited')
+                .addStringOption(opt => opt.setName('guild_id').setDescription('Guild ID').setRequired(true))
+                .addBooleanOption(opt => opt.setName('aktif').setDescription('True for unlimited, False to remove').setRequired(true)))
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
     // ── Ceza Sistemi ──────────────────────────────────────────────────────────
     new SlashCommandBuilder()
         .setName('ceza')
