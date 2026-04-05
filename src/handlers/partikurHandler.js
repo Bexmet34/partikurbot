@@ -11,7 +11,7 @@ const { Api } = require('@top-gg/sdk');
 const topggApi = config.TOPGG_TOKEN ? new Api(config.TOPGG_TOKEN) : null;
 
 const { isSubscriptionActive } = require('../services/subscriptionService');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 /**
  * Handles /createparty command
@@ -23,12 +23,20 @@ async function handleCreatePartyCommand(interaction) {
     if (!active) {
         const expiredEmbed = new EmbedBuilder()
             .setTitle('❌ Abonelik Süresi Doldu')
-            .setDescription(`Bu sunucunun bot kullanım süresi (veya 3 günlük deneme süresi) sona ermiştir.\n\nSüreyi uzatmak ve botu kullanmaya devam etmek için lütfen bot sahibi ile iletişime geçin.`)
+            .setDescription(`Bu sunucunun bot kullanım süresi (veya 3 günlük deneme süresi) sona ermiştir.\n\nSüreyi uzatmak ve botu kullanmaya devam etmek için lütfen aşağıdaki butondan destek sunucumuza katılın.`)
             .setColor('#FF0000')
             .setFooter({ text: 'Veyronix Party Master • Subscription System' });
 
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setLabel('Destek & Abonelik Uzatma')
+                .setURL(config.SUPPORT_SERVER_LINK)
+                .setStyle(ButtonStyle.Link)
+        );
+
         return await interaction.reply({
             embeds: [expiredEmbed],
+            components: [row],
             flags: [MessageFlags.Ephemeral]
         });
     }

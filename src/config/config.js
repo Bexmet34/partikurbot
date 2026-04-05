@@ -32,5 +32,8 @@ module.exports = {
     // Supabase Configuration
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_KEY: process.env.SUPABASE_KEY,
+
+    // Support Configuration
+    SUPPORT_SERVER_LINK: 'https://discord.gg/uAyxmMeTFf',
 };
 

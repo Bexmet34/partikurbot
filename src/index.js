@@ -90,6 +90,9 @@ if (config.TOPGG_TOKEN) {
 
 // Client ready event
 client.once('clientReady', async (c) => {
+    const { startCronService } = require('./services/cronService');
+    startCronService(client);
+
     console.log('-------------------------------------------');
     console.log(`🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
     console.log(`🌍 Service active on ${c.guilds.cache.size} servers.`);
