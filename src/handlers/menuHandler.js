@@ -1,4 +1,5 @@
-const { MessageFlags, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder } = require('discord.js');
+const { MessageFlags, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, UserSelectMenuBuilder, AttachmentBuilder } = require('discord.js');
+const { EMPTY_SLOT, LOGO_PATH, LOGO_NAME } = require('../constants/constants');
 const { t } = require('../services/i18n');
 const { getGuildConfig } = require('../services/guildConfig');
 const { removeActiveParty } = require('../services/partyManager');
@@ -6,7 +7,6 @@ const { createClosedButton, createCustomPartyComponents, isSelectMenuMode, updat
 const { createPartikurEmbed, buildRolesValue, buildRolesFields, addFooterFields, parseEmbedData } = require('../builders/embedBuilder');
 
 const db = require('../services/db');
-const { EMPTY_SLOT } = require('../constants/constants');
 const isActualRole = (r) => r.role && !r.role.startsWith('#HEADER:') && !r.role.startsWith('#');
 
 async function handleManageMenu(interaction) {
@@ -61,10 +61,18 @@ async function handleCloseOption(interaction, ownerId, lang) {
 
     // If it's a settings button, update the settings message to say "Closed" and edit the main message
     if (interaction.customId.startsWith('settings_close_')) {
-        await message.edit({ embeds: [closedEmbed], components: [closedRow] });
+        await message.edit({ 
+            embeds: [closedEmbed], 
+            components: [closedRow],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
         await interaction.update({ content: `✅ ${t('common.party_closed_label', lang)}`, embeds: [], components: [] });
     } else {
-        await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
+        await interaction.update({ 
+            embeds: [closedEmbed], 
+            components: [closedRow],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
     }
 }
 
@@ -227,7 +235,11 @@ async function handleEditModal(interaction) {
         })));
     }
 
-    await message.edit({ embeds: [embed], components: finalComponents });
+    await message.edit({ 
+        embeds: [embed], 
+        components: finalComponents,
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
     await interaction.reply({ content: lang === 'tr' ? '✅ Parti başarıyla güncellendi.' : '✅ Party updated successfully.', flags: [MessageFlags.Ephemeral] });
 }
 
@@ -278,7 +290,11 @@ async function handleKickMember(interaction) {
         })));
     }
 
-    await message.edit({ embeds: [embed], components: newComponents });
+    await message.edit({ 
+        embeds: [embed], 
+        components: newComponents,
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
     await interaction.update({ content: lang === 'tr' ? '✅ Kullanıcı çıkarıldı.' : '✅ Member removed.', components: [], flags: [MessageFlags.Ephemeral] });
 }
 
@@ -426,7 +442,11 @@ async function handleJoinRoleSelect(interaction) {
         multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId); // clicker's swap is erased
 
         const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
-        return await interaction.update({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
+        return await interaction.update({ 
+            embeds: [allocationResult.newEmbed], 
+            components: allocationResult.newComponents,
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
     }
 
     const isUserInAnySlot = rolesWithMembers.some(r => r.userId === userId);
@@ -448,7 +468,11 @@ async function handleJoinRoleSelect(interaction) {
     multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId);
 
     const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
-    await interaction.update({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
+    await interaction.update({ 
+        embeds: [allocationResult.newEmbed], 
+        components: allocationResult.newComponents,
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
 }
 
 async function handleJoinMultiRoleSelect(interaction) {
@@ -479,7 +503,11 @@ async function handleJoinMultiRoleSelect(interaction) {
 
     const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
 
-    await message.edit({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
+    await message.edit({ 
+        embeds: [allocationResult.newEmbed], 
+        components: allocationResult.newComponents,
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
     await interaction.update({ content: lang === 'tr' ? '✅ Yedek rolleriniz başarıyla kaydedildi.' : '✅ Swap roles successfully saved.', embeds: [], components: [] });
 }
 
@@ -566,7 +594,11 @@ async function handleAddMemberUserSelect(interaction) {
         })));
     }
 
-    await message.edit({ embeds: [embed], components: newComponents });
+    await message.edit({ 
+        embeds: [embed], 
+        components: newComponents,
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
     await interaction.update({ content: `✅ ${t('manage.member_added', lang)}`, components: [], flags: [MessageFlags.Ephemeral] });
 }
 

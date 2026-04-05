@@ -1,9 +1,18 @@
-const { MessageFlags } = require('discord.js');
+const { MessageFlags, AttachmentBuilder } = require('discord.js');
+const { LOGO_PATH, LOGO_NAME } = require('../constants/constants');
 
 /**
  * Safely replies to an interaction and ALWAYS returns the message object
  */
 async function safeReply(interaction, payload) {
+    // Automatically add logo file if embeds are present and file is not already there
+    if (payload.embeds && payload.embeds.length > 0) {
+        if (!payload.files) payload.files = [];
+        if (!payload.files.some(f => f.name === LOGO_NAME || (typeof f === 'string' && f.includes(LOGO_NAME)))) {
+            payload.files.push(new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME }));
+        }
+    }
+
     const options = {
         ...payload,
         allowedMentions: { parse: ['everyone', 'roles', 'users'] }

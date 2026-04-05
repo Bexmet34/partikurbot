@@ -40,11 +40,16 @@ const ROLE_ICONS = {
     DEFAULT: '👤'
 };
 
+const LOGO_PATH = 'c:/Users/Casper/Desktop/partikurbot/assets/images/logo.png';
+const LOGO_NAME = 'logo.png';
+
 module.exports = {
     EMPTY_SLOT,
     SELECT_MENU_THRESHOLD,
     DEFAULT_CONTENT,
     getNotlarMetni,
-    ROLE_ICONS
+    ROLE_ICONS,
+    LOGO_PATH,
+    LOGO_NAME
 };
 

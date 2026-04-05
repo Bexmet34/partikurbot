@@ -139,11 +139,8 @@ function createEmbed(title, details, content, roles, isClosed = false, guild = n
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} | ${cleanTitle}${isClosed ? ` [${t('common.closed', lang)}]` : ''}`)
         .setDescription(description)
-        .setColor(isClosed ? '#808080' : '#F1C40F');
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
+        .setColor(isClosed ? '#808080' : '#F1C40F')
+        .setThumbnail('attachment://logo.png');
 
     embed.addFields(
             { name: `👥 **${t('common.party_roster', lang)}**`, value: '\u200b', inline: false },
@@ -194,11 +191,8 @@ function createPartikurEmbed(header, rolesList, description = '', content = '', 
 
     const embed = new EmbedBuilder()
         .setTitle(sanitizedHeader)
-        .setColor(12770100);
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
+        .setColor(12770100)
+        .setThumbnail('attachment://logo.png');
 
     const leaderText = ownerId ? `<@${ownerId}>` : t('common.not_set', lang);
     const placeText = content || t('common.not_set', lang);
@@ -246,7 +240,7 @@ function createHelpEmbed(page = 0, guild = null, lang = 'tr') {
             .setTitle(t('help.title_page_0', lang))
             .setColor(15844367) // #F1C40F
             .setDescription(t('help.desc_page_0', lang))
-            .setThumbnail(thumbnail)
+            .setThumbnail('attachment://logo.png')
             .addFields(
                 { name: t('help.field_features_title', lang), value: t('help.field_features_value', lang), inline: false },
                 { name: t('help.field_categories_title', lang), value: t('help.field_categories_value', lang), inline: false },
@@ -301,11 +295,8 @@ function createDonateEmbed(lang = 'tr', guild = null) {
     const embed = new EmbedBuilder()
         .setTitle(t('help.donate_title', lang))
         .setDescription(t('help.donate_description', lang))
-        .setColor('#E91E63');
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
+        .setColor('#E91E63')
+        .setThumbnail('attachment://logo.png');
 
     embed.addFields(
             { name: '\u200b', value: t('help.donate_bank_info', lang) }

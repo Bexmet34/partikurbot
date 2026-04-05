@@ -1,5 +1,5 @@
-const { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { EMPTY_SLOT } = require('../constants/constants');
+const { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { EMPTY_SLOT, LOGO_PATH, LOGO_NAME } = require('../constants/constants');
 const { updateButtonStates, createClosedButton, createCustomPartyComponents, isSelectMenuMode } = require('../builders/componentBuilder');
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
@@ -46,7 +46,11 @@ async function handlePartyButtons(interaction) {
         );
 
 
-        return await interaction.update({ embeds: [newEmbed], components: [row, linkRow] });
+        return await interaction.update({ 
+            embeds: [newEmbed], 
+            components: [row, linkRow],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
     }
 
 
@@ -79,7 +83,11 @@ async function handlePartyButtons(interaction) {
         removeActiveParty(ownerId, message.id);
 
 
-        const response = await interaction.update({ embeds: [closedEmbed], components: [closedRow] });
+        const response = await interaction.update({ 
+            embeds: [closedEmbed], 
+            components: [closedRow],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
 
         return response;
     }
@@ -118,7 +126,11 @@ async function handlePartyButtons(interaction) {
                     .setDisabled(newPage >= totalPages - 1)
             );
 
-            return await interaction.editReply({ embeds: [newEmbed], components: [row] });
+            return await interaction.editReply({ 
+                embeds: [newEmbed], 
+                components: [row],
+                files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+            });
         } catch (error) {
             console.error('[ButtonHandler] Uyeler Paging Error:', error);
             return;
@@ -198,7 +210,11 @@ async function handlePartyButtons(interaction) {
             })));
         }
 
-        await interaction.update({ embeds: [newEmbed], components: newComponents });
+        await interaction.update({ 
+            embeds: [newEmbed], 
+            components: newComponents,
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
         return; // Interaction zaten cevaplandı, settings bloklarına düşmesin
     }
 

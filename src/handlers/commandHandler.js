@@ -287,11 +287,8 @@ function createMemberPageEmbed(members, page = 0, guild = null, lang = 'tr') {
 
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} ${t('members.guild_members', lang)}`)
-        .setColor('#2ECC71');
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
+        .setColor('#2ECC71')
+        .setThumbnail('attachment://logo.png');
 
     embed.setDescription(`**${t('common.total_members', lang)}:** ${members.length}\n**${t('common.page', lang)}:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
 
@@ -493,13 +490,10 @@ async function handleSettingsCommand(interaction) {
         .setTitle('⚙️ Bot Ayarları')
         .setDescription('Lütfen botun dilini aşağıdan seçin:')
         .setColor(3447003)
+        .setThumbnail('attachment://logo.png')
         .addFields(
             { name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true }
         );
-
-    if (interaction.guild && interaction.guild.iconURL) {
-        embed.setThumbnail(interaction.guild.iconURL());
-    }
 
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId('settings_lang_select')
@@ -528,13 +522,8 @@ async function handleVoteCommand(interaction) {
     const embed = new EmbedBuilder()
         .setTitle(t('vote.title', lang))
         .setDescription(t('vote.description', lang))
-        .setColor('#FF0055');
-
-    if (interaction.guild && interaction.guild.iconURL) {
-        embed.setThumbnail(interaction.guild.iconURL());
-    } else {
-        embed.setThumbnail('https://top.gg/images/botidls/1082239904169336902.png'); // Fallback to bot icon
-    }
+        .setColor('#FF0055')
+        .setThumbnail('attachment://logo.png');
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()

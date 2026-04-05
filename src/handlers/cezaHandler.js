@@ -4,7 +4,9 @@ const {
     ButtonBuilder,
     ButtonStyle,
     PermissionFlagsBits,
+    AttachmentBuilder,
 } = require('discord.js');
+const { LOGO_PATH, LOGO_NAME } = require('../constants/constants');
 const config = require('../config/config');
 const { HARDCODED_OWNER_ID } = require('../services/voteBypassManager');
 
@@ -65,11 +67,8 @@ function buildCezaEmbed({ caseId, userId, moderatorId, aciklama, ucret, status, 
             { name: 'Ücret', value: ucret, inline: true },
             { name: 'Durum', value: paidText, inline: true }
         )
+        .setThumbnail('attachment://logo.png')
         .setTimestamp();
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
 
     return embed;
 }
@@ -85,11 +84,8 @@ function buildUserDMEmbed({ caseId, moderatorId, aciklama, ucret, guild = null }
             { name: 'Ücret', value: ucret, inline: true },
             { name: 'Yetkili', value: `<@${moderatorId}>`, inline: true }
         )
+        .setThumbnail('attachment://logo.png')
         .setTimestamp();
-
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL());
-    }
 
     return embed;
 }
@@ -187,6 +183,7 @@ async function handleCezaButton(interaction, client) {
     await interaction.update({
         embeds: [updatedEmbed],
         components: [buildPayButton(caseId, true)],
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })],
     });
 
     const member = await interaction.guild.members.fetch(updated.userId).catch(() => null);
@@ -218,7 +215,10 @@ async function handleCezaButton(interaction, client) {
 
     try {
         const user = await client.users.fetch(updated.userId);
-        await user.send({ embeds: [buildPaidDMEmbed({ caseId: updated.caseId, paidBy: interaction.user.id })] });
+        await user.send({ 
+            embeds: [buildPaidDMEmbed({ caseId: updated.caseId, paidBy: interaction.user.id })],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
     } catch {
         // DM kapalıysa geç
     }
@@ -271,11 +271,8 @@ async function handleCezaAyarCommand(interaction) {
                 { name: 'Cezalı Rolü', value: settings.cezaliRoleId ? `<@&${settings.cezaliRoleId}>` : 'Ayarlanmadı', inline: true },
                 { name: 'Yetkili Rolü', value: settings.yetkiliRoleId ? `<@&${settings.yetkiliRoleId}>` : 'Ayarlanmadı', inline: true }
             )
+            .setThumbnail('attachment://logo.png')
             .setTimestamp();
-
-        if (interaction.guild && interaction.guild.iconURL) {
-            embed.setThumbnail(interaction.guild.iconURL());
-        }
 
         return interaction.reply({ embeds: [embed], ephemeral: true });
     }
@@ -357,7 +354,12 @@ async function handleCezaCommand(interaction) {
     const embed = buildCezaEmbed({ caseId, userId: user.id, moderatorId: interaction.user.id, aciklama, ucret, status: 'active', guild: interaction.guild });
     const row = buildPayButton(caseId, false);
 
-    const msg = await cezaChannel.send({ content: `${user}`, embeds: [embed], components: [row] });
+    const msg = await cezaChannel.send({ 
+        content: `${user}`, 
+        embeds: [embed], 
+        components: [row],
+        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+    });
 
     createCase({
         caseId,
@@ -377,7 +379,10 @@ async function handleCezaCommand(interaction) {
     });
 
     try {
-        await user.send({ embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret, guild: interaction.guild })] });
+        await user.send({ 
+            embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret, guild: interaction.guild })],
+            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        });
         dmSent = true;
     } catch {
         dmSent = false;
@@ -430,11 +435,8 @@ async function handleCezaGecmisCommand(interaction) {
                 ? `Toplam ${history.length} kayıt var. İlk 10 gösterildi.`
                 : `Toplam ${history.length} kayıt.`,
         })
+        .setThumbnail('attachment://logo.png')
         .setTimestamp();
-
-    if (interaction.guild && interaction.guild.iconURL) {
-        embed.setThumbnail(interaction.guild.iconURL());
-    }
 
     return interaction.reply({ embeds: [embed], ephemeral: true });
 }
