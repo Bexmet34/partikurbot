@@ -89,15 +89,16 @@ if (config.TOPGG_TOKEN) {
 }
 
 // Client ready event
-client.once('ready', async (c) => {
+client.once('clientReady', async (c) => {
     console.log('-------------------------------------------');
-    console.log(`🚀 ${client.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
-    console.log(`🌍 Service active on ${client.guilds.cache.size} servers.`);
+    console.log(`🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
+    console.log(`🌍 Service active on ${c.guilds.cache.size} servers.`);
     console.log('-------------------------------------------');
 
     // Sunucuları Supabase ile senkronize et (Otomatik Import)
     const { getSubscription } = require('./services/subscriptionService');
-    client.guilds.cache.forEach(async (guild) => {
+    const guilds = c.guilds.cache;
+    guilds.forEach(async (guild) => {
         try {
             await getSubscription(guild.id, guild.name, guild.ownerId);
         } catch (err) {
