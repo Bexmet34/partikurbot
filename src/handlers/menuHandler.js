@@ -53,6 +53,7 @@ async function handleCloseOption(interaction, ownerId, lang) {
         .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
         .setColor('#808080')
         .setFields(newFields)
+        .setThumbnail(`attachment://${LOGO_NAME}`)
         .setFooter(null)
         .setTimestamp(null);
 

@@ -1,5 +1,5 @@
 const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
-const { DEFAULT_CONTENT } = require('../constants/constants');
+const { DEFAULT_CONTENT, LOGO_NAME } = require('../constants/constants');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
@@ -97,6 +97,7 @@ async function handleClosePartyCommand(interaction) {
                                 .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
                                 .setColor('#808080')
                                 .setFields(newFields)
+                                .setThumbnail(`attachment://${LOGO_NAME}`)
                                 .setFooter(null)
                                 .setTimestamp(null);
 
