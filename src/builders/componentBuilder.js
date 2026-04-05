@@ -1,6 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const { EMPTY_SLOT, ROLE_ICONS, SELECT_MENU_THRESHOLD } = require('../constants/constants');
 const { t } = require('../services/i18n');
+const { stripEmojis, resolveRoleEmoji } = require('../utils/generalUtils');
 
 
 /**
@@ -29,9 +30,10 @@ function createPveButtons(ownerId, lang = 'tr') {
  * @param {string} ownerId - Party owner's Discord ID
  * @param {string} lang - Language code
  * @param {Array|null} rolesWithMembers - Array of {role, userId} objects (for select menu mode state)
+ * @param {object|null} guildOrClient - Optional discord client or guild object for resolving emojis
  */
-function createCustomPartyComponents(rolesList, ownerId, lang = 'tr', rolesWithMembers = null) {
-    return createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers);
+function createCustomPartyComponents(rolesList, ownerId, lang = 'tr', rolesWithMembers = null, guildOrClient = null) {
+    return createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers, guildOrClient);
 }
 
 /**
@@ -39,7 +41,7 @@ function createCustomPartyComponents(rolesList, ownerId, lang = 'tr', rolesWithM
  * Layout: Row 1 = Join Role Select | Row 2 = Leave Button | Row 3 = Management Menu
  * Total: 3 rows (well within 5-row limit)
  */
-function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers) {
+function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMembers, guildOrClient = null) {
     const rows = [];
 
     // --- Row 1: Join role select menu ---
@@ -47,21 +49,28 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         .setCustomId(`join_role_${ownerId}`)
         .setPlaceholder(lang === 'tr' ? '🎮 Bir rol seçerek katıl' : '🎮 Select a role to join');
 
+    let actualRolesCount = 0;
+
     rolesList.forEach((role, index) => {
         // Skip headers
         if (role.startsWith('#HEADER:') || role.startsWith('#')) return;
+        actualRolesCount++;
 
         const member = rolesWithMembers ? rolesWithMembers[index] : null;
         const isFull = member && member.userId != null;
 
         // Remove item details from select menu label
         let label = role.includes('>') ? role.split('>')[0].trim() : role;
+        
+        label = stripEmojis(label) || label;
+        let emoji = resolveRoleEmoji(label, guildOrClient);
+
         if (label.length > 90) label = label.substring(0, 87) + '...';
 
         const option = new StringSelectMenuOptionBuilder()
             .setLabel(label)
             .setValue(`${index}`)
-            .setEmoji(isFull ? '🔴' : '🟡');
+            .setEmoji(emoji);
 
         if (isFull) {
             option.setDescription(lang === 'tr' ? 'Dolu' : 'Full');
@@ -71,8 +80,10 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
 
         joinMenu.addOptions(option);
     });
-
-    rows.push(new ActionRowBuilder().addComponents(joinMenu));
+        
+    if (actualRolesCount > 0) {
+        rows.push(new ActionRowBuilder().addComponents(joinMenu));
+    }
 
     // --- Row 2: Management menu & Leave button ---
     rows.push(new ActionRowBuilder().addComponents(
@@ -80,17 +91,22 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         new ButtonBuilder()
             .setCustomId('leave')
             .setLabel(t('common.leave', lang))
+            .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId('swap_roles_btn')
+            .setLabel(lang === 'tr' ? 'Yedek Rol Seç' : 'Select Swap Role')
+            .setEmoji('🔄')
             .setStyle(ButtonStyle.Secondary)
     ));
 
-    return rows; // Always 2 rows
+    return rows;
 }
 
 /**
  * Creates BUTTON based party components for parties with ≤7 roles.
  * Discord max 5 Action Rows: up to 3 rows buttons + 1 leave row + 1 management menu
  */
-function createButtonPartyComponents(rolesList, ownerId, lang) {
+function createButtonPartyComponents(rolesList, ownerId, lang, guildOrClient = null) {
     const MAX_TOTAL_ROWS = 5;
     const RESERVED_ROWS = 1; // 1 for management menu
 
@@ -108,14 +124,20 @@ function createButtonPartyComponents(rolesList, ownerId, lang) {
             }
         }
         if (rows.length < maxRoleRows) {
-            let label = role;
+            let label = role.includes('>') ? role.split('>')[0].trim() : role;
+            label = stripEmojis(label) || label;
+            let emoji = resolveRoleEmoji(label, guildOrClient);
+
             if (label.length > 80) label = label.substring(0, 77) + "...";
-            currentRow.addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`join_custom_${index}`)
-                    .setLabel(label)
-                    .setStyle(ButtonStyle.Primary)
-            );
+            
+            const btn = new ButtonBuilder()
+                .setCustomId(`join_custom_${index}`)
+                .setLabel(label || 'Slot')
+                .setStyle(ButtonStyle.Primary);
+                
+            if (emoji) btn.setEmoji(emoji);
+
+            currentRow.addComponents(btn);
         }
     });
 

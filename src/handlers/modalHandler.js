@@ -49,7 +49,7 @@ async function handlePartiModal(interaction) {
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
         const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
         
-        embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+        embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
 
 
         const actualRoles = rolesList.filter(r => !r.startsWith('#HEADER:') && !r.startsWith('#'));

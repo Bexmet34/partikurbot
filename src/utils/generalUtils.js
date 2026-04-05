@@ -31,7 +31,56 @@ function cleanTitle(text) {
     return result.toUpperCase();
 }
 
+/**
+ * Strips discord custom emojis and standard icon emojis from a string
+ */
+function stripEmojis(text) {
+    if (!text) return text;
+    let clean = text.replace(/<a?:[^>]+>/g, '');
+    clean = clean.replace(/[🔹🔴🟡🟢🟣🟠🔵🟤⚫⚪]/g, '');
+    return clean.trim();
+}
+
+/**
+ * Resolves the appropriate emoji for a given role name
+ * @param {string} displayRole 
+ * @param {object} guildOrClient 
+ * @returns {string} Emoji string (e.g. '🔹' or '<:name:id>')
+ */
+function resolveRoleEmoji(displayRole, guildOrClient) {
+    let emoji = '🔹';
+    const client = guildOrClient?.client || guildOrClient;
+    const guild = guildOrClient?.emojis ? guildOrClient : null;
+
+    if (client) {
+        const normRole = displayRole.toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Pass 1: Exact match High Priority
+        const exactFinder = (e) => e.name.toLowerCase().replace(/[^a-z0-9]/g, '') === normRole;
+        let customEmoji = null;
+        if (guild) customEmoji = guild.emojis.cache.find(exactFinder);
+        if (!customEmoji) customEmoji = client.emojis.cache.find(exactFinder);
+
+        // Pass 2: Fallback to Substring match
+        if (!customEmoji) {
+            const subFinder = (e) => {
+                const normEmoji = e.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                return normEmoji.includes(normRole) || normRole.includes(normEmoji);
+            };
+            if (guild) customEmoji = guild.emojis.cache.find(subFinder);
+            if (!customEmoji) customEmoji = client.emojis.cache.find(subFinder);
+        }
+
+        if (customEmoji) {
+            emoji = customEmoji.toString();
+        }
+    }
+    return emoji;
+}
+
 module.exports = {
     createProgressBar,
-    cleanTitle
+    cleanTitle,
+    stripEmojis,
+    resolveRoleEmoji
 };

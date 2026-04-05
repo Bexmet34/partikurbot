@@ -208,7 +208,7 @@ async function handleEditModal(interaction) {
     const ownerId = oldData.ownerId;
 
     const embed = createPartikurEmbed(header, newRolesList, description, '', filledCount, guildName, lang, ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
     addFooterFields(embed, filledCount, totalCount, lang);
 
     // Update DB
@@ -217,10 +217,10 @@ async function handleEditModal(interaction) {
     // Select menu mode or button mode
     let finalComponents;
     if (isSelectMenuMode(newRolesList.length)) {
-        finalComponents = createCustomPartyComponents(newRolesList, ownerId, lang, rolesWithMembers);
+        finalComponents = createCustomPartyComponents(newRolesList, ownerId, lang, rolesWithMembers, interaction.guild || interaction.client);
     } else {
         const { updateButtonStates } = require('../builders/componentBuilder');
-        const components = createCustomPartyComponents(newRolesList, ownerId, lang);
+        const components = createCustomPartyComponents(newRolesList, ownerId, lang, null, interaction.guild || interaction.client);
         finalComponents = updateButtonStates(components, rolesWithMembers.map(r => ({
             name: r.role,
             value: r.userId ? `<@${r.userId}>` : EMPTY_SLOT
@@ -257,7 +257,10 @@ async function handleKickMember(interaction) {
     const totalCount = actualRoles.length;
 
     const embed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
+
+    // Removed thumbnail
+
 
     addFooterFields(embed, filledCount, totalCount, lang);
 
@@ -268,7 +271,8 @@ async function handleKickMember(interaction) {
             rolesWithMembers.map(r => r.role),
             data.ownerId,
             lang,
-            rolesWithMembers
+            rolesWithMembers,
+            interaction.guild || interaction.client
         );
     } else {
         newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
@@ -279,6 +283,40 @@ async function handleKickMember(interaction) {
 
     await message.edit({ embeds: [embed], components: newComponents });
     await interaction.update({ content: lang === 'tr' ? '✅ Kullanıcı çıkarıldı.' : '✅ Member removed.', components: [], flags: [MessageFlags.Ephemeral] });
+}
+
+async function finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName) {
+    const isActualRole = (r) => r.role && !r.role.startsWith('#HEADER:') && !r.role.startsWith('#');
+    const actualRoles = rolesWithMembers.filter(isActualRole);
+    let filledCount = actualRoles.filter(r => r.userId).length;
+    const totalCount = actualRoles.length;
+
+    const { createPartikurEmbed, buildRolesFields, buildWaitlistField, addFooterFields } = require('../builders/embedBuilder');
+    const { createCustomPartyComponents } = require('../builders/componentBuilder');
+
+    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
+    newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, message.guild));
+    
+    if (message.embeds[0].thumbnail?.url) {
+        // newEmbed.setThumbnail(message.embeds[0].thumbnail.url);
+    }
+    
+    const waitlistField = buildWaitlistField(multiRoleWaitlist, rolesWithMembers, lang);
+    if (waitlistField) {
+        newEmbed.addFields(waitlistField);
+    }
+
+    addFooterFields(newEmbed, filledCount, totalCount, lang);
+
+    const newComponents = createCustomPartyComponents(
+        rolesWithMembers.map(r => r.role),
+        data.ownerId,
+        lang,
+        rolesWithMembers,
+        message.guild || message.client // Note: here we only have message
+    );
+
+    return { newEmbed, newComponents };
 }
 
 /**
@@ -309,11 +347,93 @@ async function handleJoinRoleSelect(interaction) {
     }
 
     // Check if the selected slot is already filled
+    let multiRoleWaitlist = data.multiRoleWaitlist || [];
+    
     if (rolesWithMembers[selectedIndex].userId && rolesWithMembers[selectedIndex].userId !== userId) {
-        return await interaction.reply({
-            content: lang === 'tr' ? '❌ Bu rol zaten dolu!' : '❌ This role is already full!',
-            flags: [MessageFlags.Ephemeral]
+        const occupierId = rolesWithMembers[selectedIndex].userId;
+
+        // Check if the occupier has ANY swap choices
+        const occupierSwapEntry = multiRoleWaitlist.find(u => u.userId === occupierId);
+        if (!occupierSwapEntry) {
+            const roleName = rolesWithMembers[selectedIndex].role.split('>')[0].trim();
+            const failMsg = lang === 'tr'
+                ? `❌ **${roleName}** rolüne geçmek istediniz fakat <@${occupierId}> isimli oyuncunun geçebileceği herhangi bir Yedek rolü (Swap) yok.`
+                : `❌ You tried to join **${roleName}** but player <@${occupierId}> has no available Swap roles.`;
+            return await interaction.reply({ content: failMsg, flags: [MessageFlags.Ephemeral] });
+        }
+
+        // Simulate the swap using Bipartite Algorithm
+        const simRoles = rolesWithMembers.map(r => ({ ...r }));
+        
+        // Remove clicker from old slot inside simulation
+        const userBOldIndex = simRoles.findIndex(r => r.userId === userId);
+        if (userBOldIndex !== -1) simRoles[userBOldIndex].userId = null;
+        
+        // Put clicker into the targeted slot
+        simRoles[selectedIndex].userId = userId;
+
+        // Extract flexible users in slots (for existingMatches)
+        const existingMatches = {};
+        simRoles.forEach((r, idx) => {
+            if (r.userId && multiRoleWaitlist.some(u => u.userId === r.userId)) {
+                existingMatches[idx] = multiRoleWaitlist.find(u => u.userId === r.userId);
+            }
         });
+
+        // Collect available empty slots
+        const emptySlots = [];
+        simRoles.forEach((r, idx) => {
+            if (!r.role.startsWith('#') && !r.userId) {
+                emptySlots.push({ index: idx, role: r.role });
+            }
+        });
+
+        const { allocateMultiRoleUsers } = require('../utils/partyAllocator');
+        const { assignments, unassignedUsers } = allocateMultiRoleUsers([occupierSwapEntry], emptySlots, existingMatches);
+
+        if (unassignedUsers.length > 0) {
+            // Cannot satisfy swap locally
+            const roleName = rolesWithMembers[selectedIndex].role.split('>')[0].trim();
+            const failMsg = lang === 'tr'
+                ? `❌ **${roleName}** rolüne geçmek istediniz fakat <@${occupierId}> isimli oyuncunun geçebileceği uygun (boş) bir Yedek rol kalmamış.`
+                : `❌ You tried to join **${roleName}** but player <@${occupierId}> has no empty Swap positions left.`;
+            return await interaction.reply({ content: failMsg, flags: [MessageFlags.Ephemeral] });
+        }
+
+        // SWAP SUCCESSFUL! Apply the assignments
+        rolesWithMembers = simRoles;
+        
+        // Clear slots of flexible users in simulation to avoid ghosting
+        Object.keys(existingMatches).forEach(idx => {
+            rolesWithMembers[idx].userId = null;
+        });
+
+        for (const [slotIndex, uId] of Object.entries(assignments)) {
+            rolesWithMembers[slotIndex].userId = uId;
+        }
+
+        // Sync with DB
+        const usersToSync = Object.values(existingMatches).map(u => u.userId);
+        usersToSync.push(occupierId);
+        usersToSync.push(userId); // the clicker
+
+        const db = require('../services/db');
+        const uniqueUsersToSync = [...new Set(usersToSync)];
+        const placeholders = uniqueUsersToSync.map(() => '?').join(',');
+        db.run(`DELETE FROM party_members WHERE user_id IN (${placeholders}) AND party_id = (SELECT id FROM parties WHERE message_id = ?)`, [...uniqueUsersToSync, message.id]).catch(console.error);
+
+        for (const uId of uniqueUsersToSync) {
+            const slotIdx = rolesWithMembers.findIndex(r => r.userId === uId);
+            if (slotIdx !== -1) {
+                const roleName = rolesWithMembers[slotIdx].role;
+                db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?', [uId, roleName, message.id]).catch(console.error);
+            }
+        }
+
+        multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId); // clicker's swap is erased
+
+        const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
+        return await interaction.update({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
     }
 
     const isUserInAnySlot = rolesWithMembers.some(r => r.userId === userId);
@@ -331,25 +451,43 @@ async function handleJoinRoleSelect(interaction) {
     db.run('INSERT INTO party_members (party_id, user_id, role, status) SELECT id, ?, ?, "joined" FROM parties WHERE message_id = ?',
         [userId, roleName, message.id]).catch(e => console.error(e));
 
-    // Reconstruct Embed
-    const actualRoles = rolesWithMembers.filter(isActualRole);
-    const filledCount = actualRoles.filter(r => r.userId).length;
-    const totalCount = actualRoles.length;
-
-    const newEmbed = createPartikurEmbed(message.embeds[0].title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang));
-
-    addFooterFields(newEmbed, filledCount, totalCount, lang);
-
     // Regenerate select menu components with updated member state
-    const newComponents = createCustomPartyComponents(
-        rolesWithMembers.map(r => r.role),
-        data.ownerId,
-        lang,
-        rolesWithMembers
-    );
+    multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId);
 
-    await interaction.update({ embeds: [newEmbed], components: newComponents });
+    const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
+    await interaction.update({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
+}
+
+async function handleJoinMultiRoleSelect(interaction) {
+    if (!interaction.isStringSelectMenu()) return;
+
+    const partyMessageId = interaction.customId.split('_')[3];
+    const message = await interaction.channel.messages.fetch(partyMessageId).catch(() => null);
+    if (!message || !message.embeds[0]) {
+        return await interaction.reply({ content: '❌ Parti mesajı bulunamadı.', flags: [MessageFlags.Ephemeral] });
+    }
+
+    const { getGuildConfig } = require('../services/guildConfig');
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+    const guildName = guildConfig?.guild_name || 'Albion';
+
+    const userId = interaction.user.id;
+    const selectedIndices = interaction.values.map(v => parseInt(v));
+
+    const data = parseEmbedData(message.embeds[0], lang);
+    let rolesWithMembers = data.rolesWithMembers;
+    let multiRoleWaitlist = data.multiRoleWaitlist || [];
+
+    // Do not remove them from primary slot, swap roles are strictly supplementary.
+
+    multiRoleWaitlist = multiRoleWaitlist.filter(u => u.userId !== userId);
+    multiRoleWaitlist.push({ userId, roleIndices: selectedIndices });
+
+    const allocationResult = await finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, data, lang, guildName);
+
+    await message.edit({ embeds: [allocationResult.newEmbed], components: allocationResult.newComponents });
+    await interaction.update({ content: lang === 'tr' ? '✅ Yedek rolleriniz başarıyla kaydedildi.' : '✅ Swap roles successfully saved.', embeds: [], components: [] });
 }
 
 async function handleAddMemberSelect(interaction) {
@@ -414,7 +552,10 @@ async function handleAddMemberUserSelect(interaction) {
     const totalCount = actualRoles.length;
 
     const embed = createPartikurEmbed(data.title, rolesWithMembers.map(r => r.role), data.description, '', filledCount, guildName, lang, data.ownerId);
-    embed.addFields(...buildRolesFields(rolesWithMembers, lang));
+    embed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
+
+    // Removed thumbnail
+
 
     addFooterFields(embed, filledCount, totalCount, lang);
 
@@ -425,7 +566,8 @@ async function handleAddMemberUserSelect(interaction) {
             rolesWithMembers.map(r => r.role),
             data.ownerId,
             lang,
-            rolesWithMembers
+            rolesWithMembers,
+            interaction.guild || interaction.client
         );
     } else {
         newComponents = updateButtonStates(message.components, rolesWithMembers.map(r => ({
@@ -443,6 +585,7 @@ module.exports = {
     handleEditModal,
     handleKickMember,
     handleJoinRoleSelect,
+    handleJoinMultiRoleSelect,
     handleAddMemberSelect,
     handleAddMemberUserSelect,
     handleEditOption,

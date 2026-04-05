@@ -172,7 +172,10 @@ async function handlePartyButtons(interaction) {
         const totalCount = rolesWithMembers.length;
 
         const newEmbed = createPartikurEmbed(oldEmbed.title, rolesWithMembers.map(r => r.role), description, content, filledCount, guildName, lang, ownerId, partyTime);
-        newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang));
+        newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, interaction.guild));
+
+        // Removed thumbnail
+
 
         addFooterFields(newEmbed, filledCount, totalCount, lang);
 
@@ -184,7 +187,8 @@ async function handlePartyButtons(interaction) {
                 rolesWithMembers.map(r => r.role),
                 ownerId,
                 lang,
-                rolesWithMembers
+                rolesWithMembers,
+                interaction.guild || interaction.client
             );
         } else {
             // Button mode: update existing button states
@@ -199,6 +203,47 @@ async function handlePartyButtons(interaction) {
     }
 
     // --- SETTINGS BUTTON HANDLERS ---
+    
+    if (customId === 'swap_roles_btn') {
+        const data = parseEmbedData(message.embeds[0], lang);
+        const rolesWithMembers = data.rolesWithMembers;
+        const isUserInAnySlot = rolesWithMembers.some(r => r.userId === interaction.user.id);
+        
+        if (!isUserInAnySlot) {
+            return await interaction.reply({ content: lang === 'tr' ? '❌ Yedek rol seçmek için önce ana bir role katılmalısınız.' : '❌ You must join a primary role before selecting swap roles.', flags: [MessageFlags.Ephemeral] });
+        }
+
+        const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+        const multiJoinMenu = new StringSelectMenuBuilder()
+            .setCustomId(`join_multi_role_${message.id}`)
+            .setPlaceholder(lang === 'tr' ? '🎲 Yedek (Swap) rolleri seçin' : '🎲 Select swap roles')
+            .setMinValues(1);
+
+        let optionCount = 0;
+        rolesWithMembers.forEach((r, index) => {
+            if (r.role.startsWith('#')) return;
+            optionCount++;
+            let label = r.role.includes('>') ? r.role.split('>')[0].trim() : r.role;
+            if (label.length > 90) label = label.substring(0, 87) + '...';
+
+            const multiOption = new StringSelectMenuOptionBuilder()
+                .setLabel(label)
+                .setValue(`${index}`)
+                .setEmoji('🔄')
+                .setDescription(lang === 'tr' ? 'Yedek rol seçiminiz için işaretleyin' : 'Select for swap role option');
+            
+            multiJoinMenu.addOptions(multiOption);
+        });
+
+        multiJoinMenu.setMaxValues(Math.min(25, optionCount));
+
+        await interaction.reply({
+            content: lang === 'tr' ? 'Lütfen geçebileceğiniz **Yedek Rolleri** seçin:' : 'Please select your **Swap Roles**:',
+            components: [new ActionRowBuilder().addComponents(multiJoinMenu)],
+            flags: [MessageFlags.Ephemeral]
+        });
+        return;
+    }
 
     if (customId.startsWith('open_settings_')) {
         await handleOpenSettings(interaction, lang);

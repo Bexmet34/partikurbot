@@ -2,14 +2,14 @@ const { EmbedBuilder } = require('discord.js');
 const { NOTLAR_METNI, ROLE_ICONS } = require('../constants/constants');
 const config = require('../config/config');
 const { t } = require('../services/i18n');
-const { createProgressBar, cleanTitle } = require('../utils/generalUtils');
+const { createProgressBar, cleanTitle, stripEmojis, resolveRoleEmoji } = require('../utils/generalUtils');
 
 function parseEmbedData(embed, lang) {
     const fields = embed.fields || [];
     // Identify fields containing roles or headers
     const rollerFields = fields.filter(f => 
         (f.name && (f.name.includes('Roller') || f.name.includes('Roles') || f.name.includes('📌'))) ||
-        (f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')))
+        (f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('🔹') || /<a?:\w+:\d+>/.test(f.value) || f.value.includes('📌')))
     );
 
     const infoField = fields.find(f => f.value && (f.value.includes('👑') || f.value.includes('📝')))?.value || '';
@@ -57,15 +57,15 @@ function parseEmbedData(embed, lang) {
             }
         }
 
-        const entries = field.value.split(/(?=🔴|🟡)/).map(e => e.trim()).filter(e => e.length > 0);
+        const entries = field.value.split(/(?=🔴|🟡|🔹|<a?:\w+:\d+>)/).map(e => e.trim()).filter(e => e.length > 0);
         for (const entry of entries) {
-            if (!entry.startsWith('🔴') && !entry.startsWith('🟡')) continue;
+            if (!entry.startsWith('🔴') && !entry.startsWith('🟡') && !entry.startsWith('🔹') && !/^<a?:\w+:\d+>/.test(entry)) continue;
 
             const lines = entry.split('\n');
             const firstLine = lines[0];
             const gear = lines.slice(1).join('\n').trim();
             
-            const lineMatch = firstLine.match(/(?:🔴|🟡)\s*(.*?):\s*(?:<@(\d+)>|)/);
+            const lineMatch = firstLine.match(/^(?:🔴|🟡|🔹|<a?:\w+:\d+>)\s*(.*?):\s*(?:<@(\d+)>|)/);
             if (lineMatch) {
                 const roleName = lineMatch[1].trim().replace(/\*\*/g, '');
                 const userId = lineMatch[2] || null;
@@ -82,13 +82,45 @@ function parseEmbedData(embed, lang) {
     }
 
 
+    let multiRoleWaitlist = [];
+    const waitlistField = fields.find(f => f.name && f.name.includes('⏳'));
+    if (waitlistField && waitlistField.value) {
+        const lines = waitlistField.value.split('\n');
+        for (const line of lines) {
+            const match = line.match(/<@(\d+)>\s*:\s*(?:\[(.*?)\]\s*)?(.*)/);
+            if (match) {
+                const userId = match[1];
+                const legacyIndicesMatch = match[2];
+                const roleNamesStr = match[3];
+
+                let roleIndices = [];
+                if (legacyIndicesMatch) {
+                    roleIndices = legacyIndicesMatch.split(',').map(n => parseInt(n.trim(), 10));
+                } else {
+                    const roleNames = roleNamesStr.split(',').map(n => n.trim());
+                    roleIndices = roleNames.map(rName => {
+                        return rolesWithMembers.findIndex(r => {
+                            const baseRole = r.role.includes('>') ? r.role.split('>')[0].trim() : r.role;
+                            return baseRole === rName;
+                        });
+                    }).filter(idx => idx !== -1);
+                }
+                
+                if (roleIndices.length > 0) {
+                    multiRoleWaitlist.push({ userId, roleIndices });
+                }
+            }
+        }
+    }
+
     return {
         title: embed.title,
         ownerId,
         content: '',
         partyTime: '',
         description,
-        rolesWithMembers
+        rolesWithMembers,
+        multiRoleWaitlist
     };
 }
 
@@ -270,9 +302,12 @@ function createDonateEmbed(lang = 'tr') {
 /**
  * Builds the multi-line string for the 'Roller' field
  */
-function buildRolesValue(rolesWithMembers, lang = 'tr') {
+function buildRolesValue(rolesWithMembers, lang = 'tr', guildOrClient = null) {
+    const client = guildOrClient?.client || guildOrClient;
+    const guild = guildOrClient?.emojis ? guildOrClient : null;
+
     return rolesWithMembers.map(item => {
-        const emoji = item.userId ? '🔴' : '🟡';
+        let emoji = '🔹';
         const mention = item.userId ? `<@${item.userId}>` : '';
         
         if (item.role && (item.role.startsWith('#HEADER:') || item.role.startsWith('#'))) {
@@ -291,6 +326,9 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
             if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
         }
 
+        displayRole = stripEmojis(displayRole);
+        emoji = resolveRoleEmoji(displayRole, guildOrClient);
+
         let line = `${emoji} **${displayRole}**: ${mention}`;
         if (gearInfo) {
             line += `\n${gearInfo}`;
@@ -302,8 +340,11 @@ function buildRolesValue(rolesWithMembers, lang = 'tr') {
 /**
  * Builds an array of field objects, splitting roles if they exceed 1024 chars
  */
-function buildRolesFields(rolesWithMembers, lang = 'tr') {
+function buildRolesFields(rolesWithMembers, lang = 'tr', guildOrClient = null) {
     const fields = [];
+    const client = guildOrClient?.client || guildOrClient;
+    const guild = guildOrClient?.emojis ? guildOrClient : null;
+
     const hasHeaders = rolesWithMembers.some(r => r.role && (r.role.startsWith('#HEADER:') || r.role.startsWith('#')));
     
     let currentFieldName = hasHeaders ? '\u200b' : `👥 **${lang === 'tr' ? 'Roller' : 'Roles'}**`;
@@ -331,7 +372,7 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
             currentFieldName = `📌 ${headerLabel}`;
         } else {
             // Render Role
-            const emoji = item.userId ? '🔴' : '🟡';
+            let emoji = '🔹';
             const mention = item.userId ? `<@${item.userId}>` : '';
             
             let displayRole = item.role;
@@ -342,6 +383,9 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
                 gearInfo = parts.slice(1).join('>').trim();
                 if (gearInfo.endsWith('=')) gearInfo = gearInfo.slice(0, -1).trim();
             }
+
+            displayRole = stripEmojis(displayRole);
+            emoji = resolveRoleEmoji(displayRole, guildOrClient);
 
             let line = `${emoji} **${displayRole}**: ${mention}`;
             if (gearInfo) {
@@ -376,6 +420,24 @@ function buildRolesFields(rolesWithMembers, lang = 'tr') {
     return fields;
 }
 
+/**
+ * Builds the field for multi-role waitlist
+ */
+function buildWaitlistField(multiRoleWaitlist, rolesWithMembers, lang = 'tr') {
+    if (!multiRoleWaitlist || multiRoleWaitlist.length === 0) return null;
+    
+    const lines = multiRoleWaitlist.map(u => {
+        const roleNames = u.roleIndices.map(idx => rolesWithMembers[idx]?.role || 'Unknown').map(r => r.includes('>') ? r.split('>')[0].trim() : r);
+        return `<@${u.userId}> : ${roleNames.join(', ')}`;
+    });
+    
+    return {
+        name: `⏳ **${lang === 'tr' ? 'Çoklu Rol Bekleyenler' : 'Multi-role Waitlist'}**`,
+        value: lines.join('\n'),
+        inline: false
+    };
+}
+
 
 module.exports = {
     createEmbed,
@@ -383,6 +445,7 @@ module.exports = {
     addFooterFields,
     buildRolesValue,
     buildRolesFields,
+    buildWaitlistField,
     createHelpEmbed,
     createDonateEmbed,
     createProgressBar,

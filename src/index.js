@@ -13,7 +13,7 @@ const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
 const { AutoPoster } = require('topgg-autoposter');
-const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
+const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleJoinMultiRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { handleCezaButton, handleCezaAyarCommand, handleCezaCommand, handleCezaGecmisCommand } = require('./handlers/cezaHandler');
@@ -35,9 +35,7 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMembers,   // Ceza sistemi: rol/nick işlemleri için
         GatewayIntentBits.DirectMessages, // Ceza sistemi: DM bildirimleri için
-        // MessageContent intent requires enabling in Discord Developer Portal
-        // Go to: https://discord.com/developers/applications
-        // Select your bot -> Bot -> Privileged Gateway Intents -> Enable "Message Content Intent"
+        GatewayIntentBits.GuildEmojisAndStickers // Kendi özel emojilerimizi çekebilmek için
     ],
     partials: [Partials.Channel], // DM kanallarını almak için gerekli
 });
@@ -182,6 +180,8 @@ client.on('interactionCreate', async interaction => {
                 await handleManageMenu(interaction);
             } else if (interaction.customId.startsWith('join_role_')) {
                 await handleJoinRoleSelect(interaction);
+            } else if (interaction.customId.startsWith('join_multi_role_')) {
+                await handleJoinMultiRoleSelect(interaction);
             } else if (interaction.customId.startsWith('kick_member_')) {
                 await handleKickMember(interaction);
             } else if (interaction.customId.startsWith('add_member_select_')) {
