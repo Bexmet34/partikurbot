@@ -40,7 +40,8 @@ const ROLE_ICONS = {
     DEFAULT: '👤'
 };
 
-const LOGO_PATH = 'c:/Users/Casper/Desktop/partikurbot/assets/images/logo.png';
+const path = require('path');
+const LOGO_PATH = path.join(__dirname, '..', '..', 'assets', 'images', 'logo.png');
 const LOGO_NAME = 'logo.png';
 
 module.exports = {

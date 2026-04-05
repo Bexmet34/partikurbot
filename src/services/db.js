@@ -94,6 +94,21 @@ function initDb() {
                         db.run("ALTER TABLE guild_configs ADD COLUMN language TEXT DEFAULT 'tr'", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN welcome_message TEXT DEFAULT 'Selam, Hoşgeldiniz!'", () => { });
                         db.run("ALTER TABLE parties ADD COLUMN party_time TEXT", () => { });
+                        
+                        // Migration for vote_bypass: add guild_id if missing or reset if it's broken
+                        db.all("PRAGMA table_info(vote_bypass)", (err, info) => {
+                            if (info && !info.some(c => c.name === 'guild_id')) {
+                                db.serialize(() => {
+                                    db.run("DROP TABLE IF EXISTS vote_bypass");
+                                    db.run(`CREATE TABLE IF NOT EXISTS vote_bypass (
+                                        guild_id TEXT,
+                                        user_id TEXT,
+                                        PRIMARY KEY (guild_id, user_id)
+                                    )`);
+                                });
+                            }
+                        });
+
                         // Ensure system_settings exists for existing DBs
                         db.run(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`, () => { });
                         resolve();
