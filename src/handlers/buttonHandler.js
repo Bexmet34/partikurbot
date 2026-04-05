@@ -19,7 +19,7 @@ const { t } = require('../services/i18n');
  * Handles join and leave button interactions
  */
 async function handlePartyButtons(interaction) {
-    const { finalizeRoleUpdate, handleOpenSettings } = require('./menuHandler');
+    const { finalizeRoleUpdate } = require('./menuHandler');
     const customId = interaction.customId;
     const message = interaction.message;
     if (!message.embeds[0]) return;
@@ -241,7 +241,6 @@ async function handlePartyButtons(interaction) {
     }
 
     if (customId.startsWith('open_settings_')) {
-        const { handleOpenSettings } = require('./menuHandler');
         await handleOpenSettings(interaction, lang);
     }
 
