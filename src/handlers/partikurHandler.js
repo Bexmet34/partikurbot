@@ -1,4 +1,4 @@
-const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { getActivePartyCount } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
 const { isVoteBypassed } = require('../services/voteBypassManager');
@@ -11,7 +11,6 @@ const { Api } = require('@top-gg/sdk');
 const topggApi = config.TOPGG_TOKEN ? new Api(config.TOPGG_TOKEN) : null;
 
 const { isSubscriptionActive } = require('../services/subscriptionService');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 /**
  * Handles /createparty command
