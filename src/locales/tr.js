@@ -62,7 +62,7 @@ module.exports = {
         cmd_settings: 'Sunucu adını ve Albion Lonca ID\'sini sisteme tanımlar.',
         cmd_help: 'Bu interaktif menüyü açar.',
         cmd_vote: 'Botumuza destek olmak için oy verme linkini gönderir.',
-        donate_button: '🎁 Bağış Yap'
+        donate_button: '🛒 Satın Al & Kirala'
     },
     settings: {
         success: 'Sunucu ayarları başarıyla güncellendi!',

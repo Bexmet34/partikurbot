@@ -62,7 +62,7 @@ module.exports = {
         cmd_settings: 'Defines the guild name and Albion Guild ID for the system.',
         cmd_help: 'Opens this interactive menu.',
         cmd_vote: 'Provides the link to vote for the bot and support us.',
-        donate_button: '🎁 Support / Donate'
+        donate_button: '🛒 Buy & Rent / Subscribe'
     },
     settings: {
         success: 'Server settings updated successfully!',

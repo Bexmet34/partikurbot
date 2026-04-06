@@ -121,9 +121,53 @@ async function setUnlimitedSubscription(guildId, value = true) {
     return !error;
 }
 
+/**
+ * Removes days from subscription
+ * @param {string} guildId 
+ * @param {number} days 
+ */
+async function removeSubscriptionDays(guildId, days) {
+    const { data: current } = await supabase
+        .from('subscriptions')
+        .select('expires_at')
+        .eq('guild_id', guildId)
+        .single();
+    
+    if (!current) return false;
+
+    let baseDate = new Date(current.expires_at);
+    baseDate.setDate(baseDate.getDate() - parseInt(days));
+
+    const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+            expires_at: baseDate.toISOString(), 
+            updated_at: new Date().toISOString() 
+        })
+        .eq('guild_id', guildId);
+
+    return !error;
+}
+
+/**
+ * Sets subscription active status
+ */
+async function setSubscriptionActive(guildId, value = true) {
+    const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+            is_active: value,
+            updated_at: new Date().toISOString() 
+        })
+        .eq('guild_id', guildId);
+    return !error;
+}
+
 module.exports = {
     getSubscription,
     isSubscriptionActive,
     addSubscriptionDays,
-    setUnlimitedSubscription
+    removeSubscriptionDays,
+    setUnlimitedSubscription,
+    setSubscriptionActive
 };

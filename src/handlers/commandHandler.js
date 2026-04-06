@@ -31,7 +31,7 @@ async function handleHelpCommand(interaction) {
     const linkRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
         new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL('https://top.gg/tr/bot/1082239904169336902'),
-        new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
+        new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/veyronixbot')
     );
 
 
@@ -569,7 +569,7 @@ async function handleServersCommand(interaction) {
     });
 }
 
-const { addSubscriptionDays, setUnlimitedSubscription, getSubscription } = require('../services/subscriptionService');
+const { addSubscriptionDays, removeSubscriptionDays, setUnlimitedSubscription, setSubscriptionActive, getSubscription } = require('../services/subscriptionService');
 
 /**
  * Handles /subscription command (Owner Only)
@@ -581,35 +581,103 @@ async function handleSubscriptionCommand(interaction) {
         return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
     }
 
-    const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.options.getString('guild_id');
+    const sub = await getSubscription(guildId, 'Sistem Sorgusu', interaction.user.id);
 
-    if (subcommand === 'ver') {
-        const days = interaction.options.getInteger('gun');
-        const success = await addSubscriptionDays(guildId, days);
-        return await safeReply(interaction, { 
-            content: success ? `✅ **${guildId}** ID'li sunucuya **${days}** gün eklendi.` : `❌ İşlem başarısız (Sunucu bulunamadı veya DB hatası).`, 
-            flags: [MessageFlags.Ephemeral] 
+    if (!sub) {
+        return await safeReply(interaction, { content: `❌ **${guildId}** ID'li sunucu veritabanında bulunamadı.`, flags: [MessageFlags.Ephemeral] });
+    }
+
+    const embed = createSubscriptionEmbed(sub);
+    const row = createSubscriptionMenu(guildId, sub);
+
+    return await safeReply(interaction, {
+        embeds: [embed],
+        components: [row],
+        flags: [MessageFlags.Ephemeral]
+    });
+}
+
+function createSubscriptionEmbed(sub) {
+    const expiresAt = new Date(sub.expires_at);
+    const timestamp = Math.floor(expiresAt.getTime() / 1000);
+    const now = new Date();
+    const isExpired = !sub.is_unlimited && expiresAt < now;
+
+    let statusText = sub.is_active ? (isExpired ? 'Süresi Dolmuş ⚠️' : 'Aktif ✅') : 'Devre Dışı ❌';
+    if (sub.is_unlimited) statusText = 'Sınırsız ✅';
+
+    return new EmbedBuilder()
+        .setTitle(`🏢 Abonelik Yönetimi: ${sub.guild_name}`)
+        .setColor(sub.is_active && !isExpired ? '#2ECC71' : '#E74C3C')
+        .setFields(
+            { name: 'Sunucu ID', value: `\`${sub.guild_id}\``, inline: true },
+            { name: 'Durum', value: statusText, inline: true },
+            { name: 'Sınırsız mı?', value: sub.is_unlimited ? 'Evet' : 'Hayır', inline: true },
+            { name: 'Bitiş Tarihi', value: sub.is_unlimited ? '∞' : `<t:${timestamp}:F> (<t:${timestamp}:R>)`, inline: false },
+            { name: 'Son Güncelleme', value: sub.updated_at ? `<t:${Math.floor(new Date(sub.updated_at).getTime() / 1000)}:R>` : 'Yok', inline: true }
+        )
+        .setFooter({ text: 'Aşağıdaki menüden işlem seçiniz.' })
+        .setTimestamp();
+}
+
+function createSubscriptionMenu(guildId, sub) {
+    const select = new StringSelectMenuBuilder()
+        .setCustomId(`sub_manage:${guildId}`)
+        .setPlaceholder('Hızlı İşlemler...')
+        .addOptions(
+            { label: '30 Gün Ekle', value: 'add_30', description: 'Sunucuya 30 gün abonelik tanımlar.', emoji: '➕' },
+            { label: '7 Gün Ekle', value: 'add_7', description: 'Sunucuya 7 gün abonelik tanımlar.', emoji: '➕' },
+            { label: '30 Gün Çıkar', value: 'rem_30', description: 'Sunucudan 30 gün abonelik düşer.', emoji: '➖' },
+            { label: '7 Gün Çıkar', value: 'rem_7', description: 'Sunucudan 7 gün abonelik düşer.', emoji: '➖' },
+            { label: sub.is_unlimited ? 'Sınırsız Modu Kapat' : 'Sınırsız Modu Aç', value: 'toggle_unlimited', description: sub.is_unlimited ? 'Sınırsız erişimi kaldırır.' : 'Sınırsız abonelik tanımlar.', emoji: '♾️' },
+            { label: sub.is_active ? 'Devre Dışı Bırak' : 'Aktifleştir', value: 'toggle_active', description: sub.is_active ? 'Aboneliği dondurur/kapatır.' : 'Aboneliği tekrar aktif eder.', emoji: sub.is_active ? '🚫' : '✅' }
+        );
+
+    return new ActionRowBuilder().addComponents(select);
+}
+
+async function handleSubscriptionSelect(interaction) {
+    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    if (!isBotOwner) return;
+
+    const [_, guildId] = interaction.customId.split(':');
+    const action = interaction.values[0];
+
+    let success = false;
+    let message = '';
+
+    if (action === 'add_30') {
+        success = await addSubscriptionDays(guildId, 30);
+        message = '30 gün eklendi.';
+    } else if (action === 'add_7') {
+        success = await addSubscriptionDays(guildId, 7);
+        message = '7 gün eklendi.';
+    } else if (action === 'rem_30') {
+        success = await removeSubscriptionDays(guildId, 30);
+        message = '30 gün çıkarıldı.';
+    } else if (action === 'rem_7') {
+        success = await removeSubscriptionDays(guildId, 7);
+        message = '7 gün çıkarıldı.';
+    } else if (action === 'toggle_unlimited') {
+        // Toggle from current DB state
+        const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+        success = await setUnlimitedSubscription(guildId, !sub?.is_unlimited);
+        message = `Sınırsız mod ${!sub?.is_unlimited ? 'AÇILDI' : 'KAPATILDI'}.`;
+    } else if (action === 'toggle_active') {
+        const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+        success = await setSubscriptionActive(guildId, !sub?.is_active);
+        message = `Abonelik ${!sub?.is_active ? 'AKTİF EDİLDİ' : 'DEVRE DIŞI BIRAKILDI'}.`;
+    }
+
+    if (success) {
+        const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+        await interaction.update({
+            embeds: [createSubscriptionEmbed(updatedSub)],
+            components: [createSubscriptionMenu(guildId, updatedSub)]
         });
-
-    } else if (subcommand === 'durum') {
-        const sub = await getSubscription(guildId, 'System', 'System'); // Passing 'System' as default
-        if (!sub) return await safeReply(interaction, { content: '❌ Sunucu abonelik bilgisi bulunamadı.', flags: [MessageFlags.Ephemeral] });
-
-        const embed = new EmbedBuilder()
-            .setTitle(`🏢 Sunucu Abonelik Bilgisi`)
-            .setDescription(`**Sunucu:** ${sub.guild_name} (${sub.guild_id})\n**Sınırsız mı:** ${sub.is_unlimited ? 'Evet ✅' : 'Hayır ❌'}\n**Durum:** ${sub.is_active ? 'Aktif ✅' : 'Devre Dışı ❌'}\n**Bitiş Tarihi:** ${new Date(sub.expires_at).toLocaleString('tr-TR')}`)
-            .setColor('#3498DB');
-
-        return await safeReply(interaction, { embeds: [embed], flags: [MessageFlags.Ephemeral] });
-
-    } else if (subcommand === 'sinirsiz') {
-        const value = interaction.options.getBoolean('aktif');
-        const success = await setUnlimitedSubscription(guildId, value);
-        return await safeReply(interaction, { 
-            content: success ? `✅ **${guildId}** sunucusu için sınırsız mod: **${value ? 'AÇIK' : 'KAPALI'}**.` : `❌ İşlem başarısız.`, 
-            flags: [MessageFlags.Ephemeral] 
-        });
+    } else {
+        await interaction.followUp({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
     }
 }
 
@@ -626,6 +694,7 @@ module.exports = {
     handleSettingsCommand,
     handleServersCommand,
     handleSubscriptionCommand,
+    handleSubscriptionSelect,
     createMemberPageEmbed
 };
 
