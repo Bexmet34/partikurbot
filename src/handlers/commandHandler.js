@@ -622,10 +622,8 @@ function createSubscriptionMenu(guildId, sub) {
         .setCustomId(`sub_manage:${guildId}`)
         .setPlaceholder('Hızlı İşlemler...')
         .addOptions(
-            { label: '30 Gün Ekle', value: 'add_30', description: 'Sunucuya 30 gün abonelik tanımlar.', emoji: '➕' },
-            { label: '7 Gün Ekle', value: 'add_7', description: 'Sunucuya 7 gün abonelik tanımlar.', emoji: '➕' },
-            { label: '30 Gün Çıkar', value: 'rem_30', description: 'Sunucudan 30 gün abonelik düşer.', emoji: '➖' },
-            { label: '7 Gün Çıkar', value: 'rem_7', description: 'Sunucudan 7 gün abonelik düşer.', emoji: '➖' },
+            { label: 'Gün Ekle', value: 'add_custom', description: 'Sunucuya belirli bir gün kadar abonelik ekler.', emoji: '➕' },
+            { label: 'Gün Çıkar', value: 'rem_custom', description: 'Sunucudan belirli bir gün kadar abonelik çıkarır.', emoji: '➖' },
             { label: sub.is_unlimited ? 'Sınırsız Modu Kapat' : 'Sınırsız Modu Aç', value: 'toggle_unlimited', description: sub.is_unlimited ? 'Sınırsız erişimi kaldırır.' : 'Sınırsız abonelik tanımlar.', emoji: '♾️' },
             { label: sub.is_active ? 'Devre Dışı Bırak' : 'Aktifleştir', value: 'toggle_active', description: sub.is_active ? 'Aboneliği dondurur/kapatır.' : 'Aboneliği tekrar aktif eder.', emoji: sub.is_active ? '🚫' : '✅' }
         );
@@ -643,20 +641,21 @@ async function handleSubscriptionSelect(interaction) {
     let success = false;
     let message = '';
 
-    if (action === 'add_30') {
-        success = await addSubscriptionDays(guildId, 30);
-        message = '30 gün eklendi.';
-    } else if (action === 'add_7') {
-        success = await addSubscriptionDays(guildId, 7);
-        message = '7 gün eklendi.';
-    } else if (action === 'rem_30') {
-        success = await removeSubscriptionDays(guildId, 30);
-        message = '30 gün çıkarıldı.';
-    } else if (action === 'rem_7') {
-        success = await removeSubscriptionDays(guildId, 7);
-        message = '7 gün çıkarıldı.';
+    if (action === 'add_custom' || action === 'rem_custom') {
+        const modal = new ModalBuilder()
+            .setCustomId(`sub_modal:${action}:${guildId}`)
+            .setTitle(action === 'add_custom' ? 'Abonelik Günü Ekle' : 'Abonelik Günü Çıkar');
+
+        const input = new TextInputBuilder()
+            .setCustomId('days_input')
+            .setLabel('Kaç gün?')
+            .setPlaceholder('Örn: 30')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        return await interaction.showModal(modal);
     } else if (action === 'toggle_unlimited') {
-        // Toggle from current DB state
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
         success = await setUnlimitedSubscription(guildId, !sub?.is_unlimited);
         message = `Sınırsız mod ${!sub?.is_unlimited ? 'AÇILDI' : 'KAPATILDI'}.`;
@@ -677,6 +676,36 @@ async function handleSubscriptionSelect(interaction) {
     }
 }
 
+async function handleSubscriptionModal(interaction) {
+    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    if (!isBotOwner) return;
+
+    const [_, action, guildId] = interaction.customId.split(':');
+    const daysStr = interaction.fields.getTextInputValue('days_input');
+    const days = parseInt(daysStr);
+
+    if (isNaN(days) || days <= 0) {
+        return await interaction.reply({ content: '❌ Lütfen geçerli bir sayı giriniz.', flags: [MessageFlags.Ephemeral] });
+    }
+
+    let success = false;
+    if (action === 'add_custom') {
+        success = await addSubscriptionDays(guildId, days);
+    } else if (action === 'rem_custom') {
+        success = await removeSubscriptionDays(guildId, days);
+    }
+
+    if (success) {
+        const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+        await interaction.update({
+            embeds: [createSubscriptionEmbed(updatedSub)],
+            components: [createSubscriptionMenu(guildId, updatedSub)]
+        });
+    } else {
+        await interaction.reply({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
+    }
+}
+
 module.exports = {
     handleHelpCommand,
     handleVoteCommand,
@@ -691,6 +720,7 @@ module.exports = {
     handleServersCommand,
     handleSubscriptionCommand,
     handleSubscriptionSelect,
+    handleSubscriptionModal,
     createMemberPageEmbed
 };
 

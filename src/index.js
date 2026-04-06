@@ -6,7 +6,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect } = require('./handlers/commandHandler');
+const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect, handleSubscriptionModal } = require('./handlers/commandHandler');
 
 const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
@@ -218,6 +218,8 @@ client.on('interactionCreate', async interaction => {
             } else if (interaction.customId.startsWith('add_member_modal:')) {
                 const { handleAddMemberModal } = require('./handlers/modalHandler');
                 await handleAddMemberModal(interaction);
+            } else if (interaction.customId.startsWith('sub_modal:')) {
+                await handleSubscriptionModal(interaction);
             } else {
                 await handlePartiModal(interaction);
             }
