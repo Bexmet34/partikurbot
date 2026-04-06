@@ -97,7 +97,7 @@ async function handleClosePartyCommand(interaction) {
                                 .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
                                 .setColor('#808080')
                                 .setFields(newFields)
-                                .setThumbnail(`attachment://${LOGO_NAME}`)
+                                .setThumbnail(null)
                                 .setFooter(null)
                                 .setTimestamp(null);
 
@@ -288,8 +288,7 @@ function createMemberPageEmbed(members, page = 0, guild = null, lang = 'tr') {
 
     const embed = new EmbedBuilder()
         .setTitle(`🛡️ ${guildName} ${t('members.guild_members', lang)}`)
-        .setColor('#2ECC71')
-        .setThumbnail('attachment://logo.png');
+        .setColor('#2ECC71');
 
     embed.setDescription(`**${t('common.total_members', lang)}:** ${members.length}\n**${t('common.page', lang)}:** ${page + 1} / ${totalPages}\n\n${currentMembers.map(m => `• ${m.Name}`).join('\n')}`);
 
@@ -491,7 +490,6 @@ async function handleSettingsCommand(interaction) {
         .setTitle('⚙️ Bot Ayarları')
         .setDescription('Lütfen botun dilini aşağıdan seçin:')
         .setColor(3447003)
-        .setThumbnail('attachment://logo.png')
         .addFields(
             { name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true }
         );
@@ -523,8 +521,7 @@ async function handleVoteCommand(interaction) {
     const embed = new EmbedBuilder()
         .setTitle(t('vote.title', lang))
         .setDescription(t('vote.description', lang))
-        .setColor('#FF0055')
-        .setThumbnail('attachment://logo.png');
+        .setColor('#FF0055');
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -560,8 +557,7 @@ async function handleServersCommand(interaction) {
     const embed = new EmbedBuilder()
         .setTitle('🏢 Sunucu Listesi')
         .setDescription(`Toplam **${guilds.size}** sunucuda bulunuyorum.\n\n${guildList.length > 2000 ? guildList.substring(0, 1900) + '...' : guildList}`)
-        .setColor('#2ECC71')
-        .setThumbnail(`attachment://${LOGO_NAME}`);
+        .setColor('#2ECC71');
 
     return await safeReply(interaction, {
         embeds: [embed],

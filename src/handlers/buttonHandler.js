@@ -49,8 +49,7 @@ async function handlePartyButtons(interaction) {
 
         return await interaction.update({ 
             embeds: [newEmbed], 
-            components: [row, linkRow],
-            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+            components: [row, linkRow]
         });
     }
 
@@ -75,7 +74,7 @@ async function handlePartyButtons(interaction) {
             .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
             .setColor('#808080')
             .setFields(newFields)
-            .setThumbnail(`attachment://${LOGO_NAME}`)
+            .setThumbnail(null)
             .setFooter(null)
             .setTimestamp(null);
 
@@ -130,8 +129,7 @@ async function handlePartyButtons(interaction) {
 
             return await interaction.editReply({ 
                 embeds: [newEmbed], 
-                components: [row],
-                files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+                components: [row]
             });
         } catch (error) {
             console.error('[ButtonHandler] Uyeler Paging Error:', error);

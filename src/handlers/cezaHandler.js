@@ -67,7 +67,6 @@ function buildCezaEmbed({ caseId, userId, moderatorId, aciklama, ucret, status, 
             { name: 'Ücret', value: ucret, inline: true },
             { name: 'Durum', value: paidText, inline: true }
         )
-        .setThumbnail('attachment://logo.png')
         .setTimestamp();
 
     return embed;
@@ -84,7 +83,6 @@ function buildUserDMEmbed({ caseId, moderatorId, aciklama, ucret, guild = null }
             { name: 'Ücret', value: ucret, inline: true },
             { name: 'Yetkili', value: `<@${moderatorId}>`, inline: true }
         )
-        .setThumbnail('attachment://logo.png')
         .setTimestamp();
 
     return embed;
@@ -271,7 +269,6 @@ async function handleCezaAyarCommand(interaction) {
                 { name: 'Cezalı Rolü', value: settings.cezaliRoleId ? `<@&${settings.cezaliRoleId}>` : 'Ayarlanmadı', inline: true },
                 { name: 'Yetkili Rolü', value: settings.yetkiliRoleId ? `<@&${settings.yetkiliRoleId}>` : 'Ayarlanmadı', inline: true }
             )
-            .setThumbnail('attachment://logo.png')
             .setTimestamp();
 
         return interaction.reply({ embeds: [embed], ephemeral: true });
@@ -435,7 +432,6 @@ async function handleCezaGecmisCommand(interaction) {
                 ? `Toplam ${history.length} kayıt var. İlk 10 gösterildi.`
                 : `Toplam ${history.length} kayıt.`,
         })
-        .setThumbnail('attachment://logo.png')
         .setTimestamp();
 
     return interaction.reply({ embeds: [embed], ephemeral: true });
