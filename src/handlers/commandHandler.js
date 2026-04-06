@@ -97,12 +97,18 @@ async function handleClosePartyCommand(interaction) {
                                 .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
                                 .setColor('#808080')
                                 .setFields(newFields)
-                                .setThumbnail(null)
+                                .setThumbnail(`attachment://${LOGO_NAME}`)
                                 .setFooter(null)
                                 .setTimestamp(null);
 
                             const closedRow = createClosedButton(lang);
-                            await message.edit({ embeds: [closedEmbed], components: [closedRow] }).catch(e => {
+                            const { AttachmentBuilder } = require('discord.js');
+                            const { LOGO_PATH } = require('../constants/constants');
+                            await message.edit({ 
+                                embeds: [closedEmbed], 
+                                components: [closedRow],
+                                files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+                            }).catch(e => {
                                 console.log(`[CommandHandler] Message edit failed for ${messageId}: ${e.message}`);
                             });
                             totalClosed++;

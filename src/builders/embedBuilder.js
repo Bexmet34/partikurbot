@@ -140,7 +140,7 @@ function createEmbed(title, details, content, roles, isClosed = false, guild = n
         .setTitle(`🛡️ ${guildName} | ${cleanTitle}${isClosed ? ` [${t('common.closed', lang)}]` : ''}`)
         .setDescription(description)
         .setColor(isClosed ? '#808080' : '#F1C40F')
-        .setThumbnail(isClosed ? null : 'attachment://logo.png');
+        .setThumbnail('attachment://logo.png');
 
     embed.addFields(
             { name: `👥 **${t('common.party_roster', lang)}**`, value: '\u200b', inline: false },
