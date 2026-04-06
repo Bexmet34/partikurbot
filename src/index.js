@@ -89,7 +89,15 @@ if (config.TOPGG_TOKEN) {
 }
 
 // Client ready event
-client.once('clientReady', async (c) => {
+client.once('ready', async (c) => {
+    // Uygulama emojilerini yükle (Application Emojis)
+    try {
+        await c.application.emojis.fetch();
+        // console.log(`✅ ${c.application.emojis.cache.size} adet uygulama emojisi yüklendi.`);
+    } catch (err) {
+        console.error('❌ Uygulama emojileri çekilirken hata oluştu:', err);
+    }
+
     const { startCronService } = require('./services/cronService');
     startCronService(client);
 
