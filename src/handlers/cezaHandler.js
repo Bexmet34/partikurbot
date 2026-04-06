@@ -181,7 +181,6 @@ async function handleCezaButton(interaction, client) {
     await interaction.update({
         embeds: [updatedEmbed],
         components: [buildPayButton(caseId, true)],
-        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })],
     });
 
     const member = await interaction.guild.members.fetch(updated.userId).catch(() => null);
@@ -215,7 +214,6 @@ async function handleCezaButton(interaction, client) {
         const user = await client.users.fetch(updated.userId);
         await user.send({ 
             embeds: [buildPaidDMEmbed({ caseId: updated.caseId, paidBy: interaction.user.id })],
-            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
         });
     } catch {
         // DM kapalıysa geç
@@ -354,8 +352,7 @@ async function handleCezaCommand(interaction) {
     const msg = await cezaChannel.send({ 
         content: `${user}`, 
         embeds: [embed], 
-        components: [row],
-        files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+        components: [row]
     });
 
     createCase({
@@ -377,8 +374,7 @@ async function handleCezaCommand(interaction) {
 
     try {
         await user.send({ 
-            embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret, guild: interaction.guild })],
-            files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
+            embeds: [buildUserDMEmbed({ caseId, moderatorId: interaction.user.id, aciklama, ucret, guild: interaction.guild })]
         });
         dmSent = true;
     } catch {

@@ -1,4 +1,4 @@
-const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits } = require('discord.js');
+const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { DEFAULT_CONTENT, LOGO_NAME } = require('../constants/constants');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
@@ -675,7 +675,8 @@ async function handleSubscriptionSelect(interaction) {
         const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
         await interaction.update({
             embeds: [createSubscriptionEmbed(updatedSub)],
-            components: [createSubscriptionMenu(guildId, updatedSub)]
+            components: [createSubscriptionMenu(guildId, updatedSub)],
+            files: []
         });
     } else {
         await interaction.followUp({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
@@ -705,7 +706,8 @@ async function handleSubscriptionModal(interaction) {
         const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
         await interaction.update({
             embeds: [createSubscriptionEmbed(updatedSub)],
-            components: [createSubscriptionMenu(guildId, updatedSub)]
+            components: [createSubscriptionMenu(guildId, updatedSub)],
+            files: []
         });
     } else {
         await interaction.reply({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });

@@ -5,11 +5,19 @@ const { LOGO_PATH, LOGO_NAME } = require('../constants/constants');
  * Safely replies to an interaction and ALWAYS returns the message object
  */
 async function safeReply(interaction, payload) {
-    // Automatically add logo file if embeds are present and file is not already there
+    // Automatically add logo file ONLY if at least one embed uses it as a thumbnail
     if (payload.embeds && payload.embeds.length > 0) {
-        if (!payload.files) payload.files = [];
-        if (!payload.files.some(f => f.name === LOGO_NAME || (typeof f === 'string' && f.includes(LOGO_NAME)))) {
-            payload.files.push(new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME }));
+        const usesLogo = payload.embeds.some(embed => {
+            // EmbedBuilder stores data in .data, while plain objects have them at root
+            const thumbnail = (embed.data && embed.data.thumbnail) || (typeof embed.thumbnail === 'object' ? embed.thumbnail : null);
+            return thumbnail && thumbnail.url === `attachment://${LOGO_NAME}`;
+        });
+
+        if (usesLogo) {
+            if (!payload.files) payload.files = [];
+            if (!payload.files.some(f => f.name === LOGO_NAME || (typeof f === 'string' && f.includes(LOGO_NAME)))) {
+                payload.files.push(new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME }));
+            }
         }
     }
 
