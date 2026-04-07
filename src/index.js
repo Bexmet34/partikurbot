@@ -182,7 +182,7 @@ client.on('guildCreate', async (guild) => {
                     .setStyle(ButtonStyle.Link),
                 new ButtonBuilder()
                     .setLabel('Web Sitesi | Website')
-                    .setURL(config.WEBSITE_LINK || 'https://veyronix.icu')
+                    .setURL(config.WEBSITE_LINK)
                     .setStyle(ButtonStyle.Link)
             );
 

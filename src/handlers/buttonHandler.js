@@ -8,6 +8,7 @@ const { createProgressBar } = require('../utils/generalUtils');
 const { getGuildConfig } = require('../services/guildConfig');
 const { createHelpEmbed, createDonateEmbed, createPartikurEmbed, addFooterFields, buildRolesValue, buildRolesFields, parseEmbedData } = require('../builders/embedBuilder');
 
+const config = require('../config/config');
 const db = require('../services/db');
 const { t } = require('../services/i18n');
 
@@ -41,8 +42,8 @@ async function handlePartyButtons(interaction) {
         );
 
         const linkRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL('https://veyronixbot.vercel.app/'),
-            new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL('https://top.gg/tr/bot/1082239904169336902'),
+            new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(config.WEBSITE_LINK),
+            new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(config.TOPGG_LINK),
             new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
         );
 

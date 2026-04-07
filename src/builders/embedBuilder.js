@@ -222,7 +222,7 @@ function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
         },
         {
             name: '',
-            value: `[Website ](https://veyronixbot.vercel.app/) - [Top.gg](https://top.gg/tr/bot/1082239904169336902)  -  [Shop](https://www.shopier.com/veyronixbot)\n\n`
+            value: `[Website](${config.WEBSITE_LINK}) - [Top.gg](${config.TOPGG_LINK}) - [Shop](https://www.shopier.com/veyronixbot)\n\n`
         }
     );
 }
