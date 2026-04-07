@@ -148,5 +148,16 @@ module.exports = {
         description: 'Botumuza oy vererek bize destek olabilir ve gelişmemize katkıda bulunabilirsiniz.\n\nHer **12 saatte bir** oy vererek desteğinizi sürdürebilirsiniz. Teşekkürler! ❤️',
         button_text: 'Hemen Oy Ver',
         info_reminder: '💡 **Botu Beğendin mi?**\nDestek olmak için `/vote` komutunu kullanarak bize oy verebilirsin!'
+    },
+    subscription: {
+        expired_title: '❌ Abonelik Süresi Doldu',
+        expired_desc: 'Bu sunucunun bot kullanım süresi sona ermiştir.\n\nSüreyi uzatmak ve botu kullanmaya devam etmek için lütfen aşağıdaki butondan destek sunucumuza katılın.',
+        support_button: 'Destek & Abonelik Uzatma',
+        trial_started_title: '🎉 Deneme Sürümü Başladı!',
+        trial_started_desc: 'Botumuz sunucunuza başarıyla eklendi! **3 günlük ücretsiz deneme** süreniz tanımlanmıştır.\n\nBu süre boyunca tüm özellikleri (/createparty vb.) sınırsız kullanabilirsiniz.',
+        one_day_warning_title: '⚠️ Abonelik Süreniz Bitmek Üzere!',
+        one_day_warning_desc: '**{guildName}** sunucusu için Discord Bot aboneliğinizin süresi **24 saatten az** bir süre sonra dolacaktır.\n\nSüre dolduğunda `/createparty` komutu kullanılamayacaktır. Süreyi uzatmak için hemen destek sunucumuza katılabilirsiniz.',
+        expires_at: 'Bitiş Tarihi',
+        join_support: 'Destek Sunucusuna Katıl'
     }
 };

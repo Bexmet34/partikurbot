@@ -2,6 +2,8 @@ const cron = require('node-cron');
 const supabase = require('./supabaseClient');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../config/config');
+const { getGuildConfig } = require('./guildConfig');
+const { t } = require('./i18n');
 
 /**
  * Starts the cron service for automatic subscription checks
@@ -36,18 +38,21 @@ function startCronService(client) {
                         const user = await client.users.fetch(sub.owner_id);
                         if (!user) continue;
 
+                        const guildSettings = await getGuildConfig(sub.guild_id);
+                        const lang = guildSettings?.language || 'tr';
+
                         const embed = new EmbedBuilder()
-                            .setTitle('⚠️ Abonelik Süreniz Bitmek Üzere!')
-                            .setDescription(`**${sub.guild_name}** sunucusu için Discord Bot aboneliğinizin süresi **24 saatten az** bir süre sonra dolacaktır.\n\nSüre dolduğunda `/createparty` komutu kullanılamayacaktır. Süreyi uzatmak için hemen destek sunucumuza katılabilirsiniz.`)
+                            .setTitle(t('subscription.one_day_warning_title', lang))
+                            .setDescription(t('subscription.one_day_warning_desc', lang).replace('{guildName}', sub.guild_name))
                             .addFields(
-                                { name: 'Bitiş Tarihi', value: new Date(sub.expires_at).toLocaleString('tr-TR'), inline: true }
+                                { name: t('subscription.expires_at', lang), value: new Date(sub.expires_at).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US'), inline: true }
                             )
                             .setColor('#E67E22')
                             .setFooter({ text: 'Veyronix Party Master • Subscription System' });
 
                         const row = new ActionRowBuilder().addComponents(
                             new ButtonBuilder()
-                                .setLabel('Destek Sunucusuna Katıl')
+                                .setLabel(t('subscription.join_support', lang))
                                 .setURL(config.SUPPORT_SERVER_LINK)
                                 .setStyle(ButtonStyle.Link)
                         );

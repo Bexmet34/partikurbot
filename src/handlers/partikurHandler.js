@@ -20,15 +20,18 @@ async function handleCreatePartyCommand(interaction) {
     const active = await isSubscriptionActive(interaction.guildId, interaction.guild.name, interaction.guild.ownerId);
     
     if (!active) {
+        const guildConfig = await getGuildConfig(interaction.guildId);
+        const lang = guildConfig?.language || 'tr';
+
         const expiredEmbed = new EmbedBuilder()
-            .setTitle('❌ Abonelik Süresi Doldu')
-            .setDescription(`Bu sunucunun bot kullanım süresi (veya 3 günlük deneme süresi) sona ermiştir.\n\nSüreyi uzatmak ve botu kullanmaya devam etmek için lütfen aşağıdaki butondan destek sunucumuza katılın.`)
+            .setTitle(t('subscription.expired_title', lang))
+            .setDescription(t('subscription.expired_desc', lang))
             .setColor('#FF0000')
             .setFooter({ text: 'Veyronix Party Master • Subscription System' });
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-                .setLabel('Destek & Abonelik Uzatma')
+                .setLabel(t('subscription.support_button', lang))
                 .setURL(config.SUPPORT_SERVER_LINK)
                 .setStyle(ButtonStyle.Link)
         );

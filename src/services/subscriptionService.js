@@ -20,8 +20,8 @@ async function getSubscription(guildId, guildName, ownerId) {
              return null;
         }
 
-        // 2. If exists, return it
-        if (data) return data;
+        // 2. If exists, return it with created: false
+        if (data) return { ...data, created: false };
 
         // 3. If not exists, create 3-day trial
         const expiresAt = new Date();
@@ -47,7 +47,7 @@ async function getSubscription(guildId, guildName, ownerId) {
         }
 
         console.log(`[SubscriptionService] 3-Day Trial created for ${guildName} (${guildId})`);
-        return newData;
+        return { ...newData, created: true };
 
     } catch (err) {
         console.error('[SubscriptionService] Critical Error:', err.message);

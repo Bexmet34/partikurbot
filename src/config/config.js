@@ -35,5 +35,6 @@ module.exports = {
 
     // Support Configuration
     SUPPORT_SERVER_LINK: 'https://discord.gg/uAyxmMeTFf',
+    WEBSITE_LINK: 'https://veyronix.icu', // Site link updated
 };
 

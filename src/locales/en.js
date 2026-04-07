@@ -148,5 +148,16 @@ module.exports = {
         description: 'You can support us and contribute to our development by voting for our bot.\n\nYou can continue your support by voting every **12 hours**. Thank you! ❤️',
         button_text: 'Vote Now',
         info_reminder: '💡 **Enjoying the Bot?**\nYou can show your support by using the `/vote` command to vote for us!'
+    },
+    subscription: {
+        expired_title: '❌ Subscription Expired',
+        expired_desc: 'The bot usage period for this server has expired.\n\nTo extend the period and continue using the bot, please join our support server using the button below.',
+        support_button: 'Support & Extend Subscription',
+        trial_started_title: '🎉 Trial Period Started!',
+        trial_started_desc: 'Our bot has been successfully added to your server! A **3-day free trial** has been assigned.\n\nDuring this period, you can use all features (/createparty etc.) without limits.',
+        one_day_warning_title: '⚠️ Subscription Expiring Soon!',
+        one_day_warning_desc: 'Your Discord Bot subscription for **{guildName}** will expire in **less than 24 hours**.\n\nOnce expired, the `/createparty` command will no longer be available. You can join our support server now to extend your subscription.',
+        expires_at: 'Expiration Date',
+        join_support: 'Join Support Server'
     }
 };

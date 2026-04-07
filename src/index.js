@@ -150,6 +150,51 @@ client.once('ready', async (c) => {
     }
 });
 
+// Guild join event - Handle trial start and notification
+client.on('guildCreate', async (guild) => {
+    try {
+        console.log(`[GuildCreate] Joined new server: ${guild.name} (${guild.id})`);
+        
+        const { getSubscription } = require('./services/subscriptionService');
+        const sub = await getSubscription(guild.id, guild.name, guild.ownerId);
+
+        // Only notify if it's the first time (trial created) or if they haven't been notified (we can check trial_used but that might be reset).
+        if (!sub || !sub.created) return;
+
+        const owner = await guild.members.fetch(guild.ownerId).catch(() => null);
+        if (owner) {
+            const welcomeEmbed = new EmbedBuilder()
+                .setTitle('🎉 Deneme Sürümü Başladı! | Trial Period Started!')
+                .setDescription(
+                    `🇹🇷 **Türkçe:**\nBotumuz sunucunuza başarıyla eklendi! **3 günlük ücretsiz deneme** süreniz tanımlanmıştır.\nBu süre boyunca tüm özellikleri (/createparty vb.) sınırsız kullanabilirsiniz.\n\n` +
+                    `🇺🇸 **English:**\nOur bot has been successfully added to your server! A **3-day free trial** has been assigned.\nDuring this period, you can use all features (/createparty etc.) without limits.`
+                )
+                .addFields(
+                    { name: 'Bitiş Tarihi | Expiration Date', value: new Date(sub.expires_at).toLocaleString('tr-TR'), inline: false }
+                )
+                .setColor('#2ECC71')
+                .setFooter({ text: 'Veyronix Party Master' });
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setLabel('Destek Sunucusu | Support Server')
+                    .setURL(config.SUPPORT_SERVER_LINK)
+                    .setStyle(ButtonStyle.Link),
+                new ButtonBuilder()
+                    .setLabel('Web Sitesi | Website')
+                    .setURL(config.WEBSITE_LINK || 'https://veyronix.icu')
+                    .setStyle(ButtonStyle.Link)
+            );
+
+            await owner.send({ embeds: [welcomeEmbed], components: [row] }).catch(() => {
+                console.log(`[GuildCreate] Could not send DM to owner of ${guild.name}`);
+            });
+        }
+    } catch (err) {
+        console.error('[GuildCreate] Error:', err.message);
+    }
+});
+
 client.on('interactionCreate', async interaction => {
     try {
         if (interaction.guildId) {
