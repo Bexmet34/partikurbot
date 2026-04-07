@@ -89,7 +89,7 @@ if (config.TOPGG_TOKEN) {
 }
 
 // Client ready event
-client.once('ready', async (c) => {
+client.once('clientReady', async (c) => {
     // Uygulama emojilerini yükle (Application Emojis)
     try {
         await c.application.emojis.fetch();

@@ -5,6 +5,7 @@ const {
     ButtonStyle,
     PermissionFlagsBits,
     AttachmentBuilder,
+    MessageFlags,
 } = require('discord.js');
 const { LOGO_PATH, LOGO_NAME } = require('../constants/constants');
 const config = require('../config/config');
@@ -129,7 +130,7 @@ async function handleCezaButton(interaction, client) {
     if (!interaction.customId.startsWith('ceza_odendi:')) return false;
 
     if (!interaction.inGuild()) {
-        await interaction.reply({ content: 'Bu buton sadece sunucuda kullanılabilir.', ephemeral: true });
+        await interaction.reply({ content: 'Bu buton sadece sunucuda kullanılabilir.', flags: [MessageFlags.Ephemeral] });
         return true;
     }
 
@@ -137,24 +138,24 @@ async function handleCezaButton(interaction, client) {
     const cezaKaydi = getCaseById(caseId);
 
     if (!cezaKaydi) {
-        await interaction.reply({ content: 'Ceza kaydı bulunamadı.', ephemeral: true });
+        await interaction.reply({ content: 'Ceza kaydı bulunamadı.', flags: [MessageFlags.Ephemeral] });
         return true;
     }
 
     if (cezaKaydi.guildId !== interaction.guild.id) {
-        await interaction.reply({ content: 'Bu ceza bu sunucuya ait değil.', ephemeral: true });
+        await interaction.reply({ content: 'Bu ceza bu sunucuya ait değil.', flags: [MessageFlags.Ephemeral] });
         return true;
     }
 
     const settings = getGuildSettings(interaction.guild.id);
 
     if (!yetkiVarMi(interaction, settings)) {
-        await interaction.reply({ content: 'Bu butonu kullanmaya yetkin yok.', ephemeral: true });
+        await interaction.reply({ content: 'Bu butonu kullanmaya yetkin yok.', flags: [MessageFlags.Ephemeral] });
         return true;
     }
 
     if (cezaKaydi.status === 'paid') {
-        await interaction.reply({ content: 'Bu ceza zaten ödenmiş.', ephemeral: true });
+        await interaction.reply({ content: 'Bu ceza zaten ödenmiş.', flags: [MessageFlags.Ephemeral] });
         return true;
     }
 
@@ -233,7 +234,7 @@ async function handleCezaAyarCommand(interaction) {
     ) {
         return interaction.reply({
             content: 'Sadece sunucu sahibi veya admin bu ayarı yapabilir.',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
         });
     }
 
@@ -242,19 +243,19 @@ async function handleCezaAyarCommand(interaction) {
     if (sub === 'kanal') {
         const kanal = interaction.options.getChannel('kanal', true);
         updateGuildSettings(interaction.guild.id, { cezaChannelId: kanal.id });
-        return interaction.reply({ content: `Ceza kanalı ${kanal} olarak ayarlandı.`, ephemeral: true });
+        return interaction.reply({ content: `Ceza kanalı ${kanal} olarak ayarlandı.`, flags: [MessageFlags.Ephemeral] });
     }
 
     if (sub === 'rol') {
         const rol = interaction.options.getRole('rol', true);
         updateGuildSettings(interaction.guild.id, { cezaliRoleId: rol.id });
-        return interaction.reply({ content: `Cezalı rolü <@&${rol.id}> olarak ayarlandı.`, ephemeral: true });
+        return interaction.reply({ content: `Cezalı rolü <@&${rol.id}> olarak ayarlandı.`, flags: [MessageFlags.Ephemeral] });
     }
 
     if (sub === 'yetkili-rol') {
         const rol = interaction.options.getRole('rol', true);
         updateGuildSettings(interaction.guild.id, { yetkiliRoleId: rol.id });
-        return interaction.reply({ content: `Ceza yetkili rolü <@&${rol.id}> olarak ayarlandı.`, ephemeral: true });
+        return interaction.reply({ content: `Ceza yetkili rolü <@&${rol.id}> olarak ayarlandı.`, flags: [MessageFlags.Ephemeral] });
     }
 
     if (sub === 'goster') {
@@ -269,7 +270,7 @@ async function handleCezaAyarCommand(interaction) {
             )
             .setTimestamp();
 
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
     }
 }
 
@@ -283,12 +284,12 @@ async function handleCezaCommand(interaction) {
                 '`/ceza-ayar kanal`\n' +
                 '`/ceza-ayar rol`\n' +
                 '`/ceza-ayar yetkili-rol`',
-            ephemeral: true,
+            flags: [MessageFlags.Ephemeral],
         });
     }
 
     if (!yetkiVarMi(interaction, settings)) {
-        return interaction.reply({ content: 'Bu komutu kullanmaya yetkin yok.', ephemeral: true });
+        return interaction.reply({ content: 'Bu komutu kullanmaya yetkin yok.', flags: [MessageFlags.Ephemeral] });
     }
 
     const user = interaction.options.getUser('kullanici', true);
@@ -296,30 +297,30 @@ async function handleCezaCommand(interaction) {
     const ucret = interaction.options.getString('ucret', true);
 
     if (user.bot) {
-        return interaction.reply({ content: 'Botlara ceza veremezsin.', ephemeral: true });
+        return interaction.reply({ content: 'Botlara ceza veremezsin.', flags: [MessageFlags.Ephemeral] });
     }
 
     if (user.id === interaction.user.id) {
-        return interaction.reply({ content: 'Kendine ceza veremezsin.', ephemeral: true });
+        return interaction.reply({ content: 'Kendine ceza veremezsin.', flags: [MessageFlags.Ephemeral] });
     }
 
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
     if (!member) {
-        return interaction.reply({ content: 'Kullanıcı sunucuda bulunamadı.', ephemeral: true });
+        return interaction.reply({ content: 'Kullanıcı sunucuda bulunamadı.', flags: [MessageFlags.Ephemeral] });
     }
 
     const cezaChannel = interaction.guild.channels.cache.get(settings.cezaChannelId);
     const cezaRole = interaction.guild.roles.cache.get(settings.cezaliRoleId);
 
     if (!cezaChannel || !cezaChannel.isTextBased()) {
-        return interaction.reply({ content: 'Ayarlı ceza kanalı bulunamadı veya yazılabilir kanal değil.', ephemeral: true });
+        return interaction.reply({ content: 'Ayarlı ceza kanalı bulunamadı veya yazılabilir kanal değil.', flags: [MessageFlags.Ephemeral] });
     }
 
     if (!cezaRole) {
-        return interaction.reply({ content: 'Ayarlı cezalı rolü bulunamadı.', ephemeral: true });
+        return interaction.reply({ content: 'Ayarlı cezalı rolü bulunamadı.', flags: [MessageFlags.Ephemeral] });
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     const caseId = caseIdUret();
     const originalNickname = member.nickname ?? null;
@@ -398,14 +399,14 @@ async function handleCezaGecmisCommand(interaction) {
     const settings = getGuildSettings(interaction.guild.id);
 
     if (!yetkiVarMi(interaction, settings)) {
-        return interaction.reply({ content: 'Bu komutu kullanmaya yetkin yok.', ephemeral: true });
+        return interaction.reply({ content: 'Bu komutu kullanmaya yetkin yok.', flags: [MessageFlags.Ephemeral] });
     }
 
     const user = interaction.options.getUser('kullanici', true);
     const history = getCasesByUser(interaction.guild.id, user.id);
 
     if (!history.length) {
-        return interaction.reply({ content: `${user} için kayıtlı ceza geçmişi bulunamadı.`, ephemeral: true });
+        return interaction.reply({ content: `${user} için kayıtlı ceza geçmişi bulunamadı.`, flags: [MessageFlags.Ephemeral] });
     }
 
     const lines = history.slice(0, 10).map((c, i) => {
@@ -430,7 +431,7 @@ async function handleCezaGecmisCommand(interaction) {
         })
         .setTimestamp();
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.reply({ embeds: [embed], flags: [MessageFlags.Ephemeral] });
 }
 
 module.exports = {

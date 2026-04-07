@@ -17,6 +17,8 @@ const { t } = require('../services/i18n');
  * Handles /help command
  */
 async function handleHelpCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
 
     const embed = createHelpEmbed(0, interaction.guild, lang);
 
