@@ -669,19 +669,11 @@ async function handleSubscriptionSelect(interaction) {
         const newValue = !sub?.is_unlimited;
         success = await setUnlimitedSubscription(guildId, newValue);
         message = `Sınırsız mod ${newValue ? 'AÇILDI' : 'KAPATILDI'}.`;
-        
-        if (success && newValue) {
-            await sendSubscriptionNotification(interaction.client, guildId, 'unlimited');
-        }
     } else if (action === 'toggle_active') {
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
         const newValue = !sub?.is_active;
         success = await setSubscriptionActive(guildId, newValue);
         message = `Abonelik ${newValue ? 'AKTİF EDİLDİ' : 'DEVRE DIŞI BIRAKILDI'}.`;
-
-        if (success && !newValue) {
-            await sendSubscriptionNotification(interaction.client, guildId, 'disabled');
-        }
     }
 
     if (success) {
@@ -711,9 +703,6 @@ async function handleSubscriptionModal(interaction) {
     let success = false;
     if (action === 'add_custom') {
         success = await addSubscriptionDays(guildId, days);
-        if (success) {
-            await sendSubscriptionNotification(interaction.client, guildId, 'extended', days);
-        }
     } else if (action === 'rem_custom') {
         success = await removeSubscriptionDays(guildId, days);
     }

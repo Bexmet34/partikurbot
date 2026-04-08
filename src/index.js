@@ -100,7 +100,10 @@ client.once('clientReady', async (c) => {
     }
 
     const { startCronService } = require('./services/cronService');
+    const { initDbListeners } = require('./services/dbListenerService');
+    
     startCronService(client);
+    initDbListeners(client);
 
     console.log('-------------------------------------------');
     console.log(`🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
