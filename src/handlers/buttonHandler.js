@@ -224,7 +224,7 @@ async function handlePartyButtons(interaction) {
             const multiOption = new StringSelectMenuOptionBuilder()
                 .setLabel(label)
                 .setValue(`${index}`)
-                .setEmoji(resolveRoleEmoji('Swap', interaction.guild))
+                .setEmoji(resolveRoleEmoji(label, interaction.guild))
                 .setDescription(lang === 'tr' ? 'Yedek rol seçiminiz için işaretleyin' : 'Select for swap role option');
             
             multiJoinMenu.addOptions(multiOption);
