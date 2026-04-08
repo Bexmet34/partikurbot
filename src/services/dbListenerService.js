@@ -1,80 +1,71 @@
 const supabase = require('./supabaseClient');
 const { sendSubscriptionNotification } = require('../utils/notificationUtils');
 
+let lastKnownSubs = new Map();
+
 /**
- * Initializes listeners for database changes to trigger notifications.
+ * Periodically checks the database for changes (Polling).
+ * This works on all Supabase plans (including Free) without requiring Realtime setup.
  * @param {import('discord.js').Client} client 
  */
-function initDbListeners(client) {
-    console.log('[DbListenerService] Initializing Realtime listeners for subscriptions...');
+async function initDbListeners(client) {
+    console.log('[DbListenerService] Polling system started (checking every 60 seconds)...');
 
-    // Note: To get 'oldData', the table must have REPLICA IDENTITY FULL.
-    // Run this in Supabase SQL Editor: ALTER TABLE subscriptions REPLICA IDENTITY FULL;
-    
-    supabase
-        .channel('subscription_changes')
-        .on(
-            'postgres_changes',
-            {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'subscriptions'
-            },
-            async (payload) => {
-                const oldData = payload.old;
-                const newData = payload.new;
+    // Fetch initial state to avoid spamming notifications on bot restart
+    await checkUpdates(client, true);
 
-                console.log(`[DbListenerService] Change detected for guild: ${newData.guild_id}`);
-                await handleSubscriptionUpdate(client, oldData, newData);
-            }
-        )
-        .subscribe((status) => {
-            console.log(`[DbListenerService] Subscription listener status: ${status}`);
-        });
+    // Check for updates every 60 seconds
+    setInterval(async () => {
+        await checkUpdates(client);
+    }, 60000);
 }
 
 /**
- * Handles subscription update logic and sends notifications.
+ * Checks for differences between current DB state and the last known state.
  */
-async function handleSubscriptionUpdate(client, oldData, newData) {
-    const guildId = newData.guild_id;
+async function checkUpdates(client, initial = false) {
+    try {
+        const { data: subs, error } = await supabase
+            .from('subscriptions')
+            .select('*');
 
-    // 1. Check for 'disabled' (is_active: false)
-    // If oldData is available, check for transition. If not, just check current value.
-    if (newData.is_active === false) {
-        if (!oldData || oldData.is_active !== false) {
-            await sendSubscriptionNotification(client, guildId, 'disabled');
-            return;
-        }
-    }
+        if (error) throw error;
 
-    // 2. Check for 'unlimited' (is_unlimited: true)
-    if (newData.is_unlimited === true) {
-        if (!oldData || oldData.is_unlimited !== true) {
-            await sendSubscriptionNotification(client, guildId, 'unlimited');
-            return;
-        }
-    }
+        for (const sub of subs) {
+            const guildId = sub.guild_id;
+            const oldSub = lastKnownSubs.get(guildId);
 
-    // 3. Check for 'extended' (expires_at change)
-    if (newData.expires_at) {
-        if (oldData && oldData.expires_at) {
-            const oldExpiry = new Date(oldData.expires_at);
-            const newExpiry = new Date(newData.expires_at);
+            // If we have an old record, compare for changes
+            if (!initial && oldSub) {
+                // 1. Unlimited Mode Activation
+                if (!oldSub.is_unlimited && sub.is_unlimited) {
+                    await sendSubscriptionNotification(client, guildId, 'unlimited');
+                }
+                // 2. Server Disabled (active -> inactive)
+                else if (oldSub.is_active && !sub.is_active) {
+                    await sendSubscriptionNotification(client, guildId, 'disabled');
+                }
+                // 3. Subscription Extension (expiry date increased)
+                else if (sub.expires_at !== oldSub.expires_at) {
+                    const oldExpiry = new Date(oldSub.expires_at);
+                    const newExpiry = new Date(sub.expires_at);
 
-            if (newExpiry > oldExpiry) {
-                const diffInMs = newExpiry - oldExpiry;
-                const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
-
-                if (diffInDays > 0) {
-                    await sendSubscriptionNotification(client, guildId, 'extended', diffInDays);
+                    if (newExpiry > oldExpiry) {
+                        const diffInMs = newExpiry - oldExpiry;
+                        const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
+                        
+                        if (diffInDays > 0) {
+                            await sendSubscriptionNotification(client, guildId, 'extended', diffInDays);
+                        }
+                    }
                 }
             }
-        } else if (!oldData) {
-            // Fallback: If we don't have old data, we can't calculate days, 
-            // but we know it's an update. We can send a generic extension message or skip.
-            // For now, let's skip to avoid spamming on every minor update.
+
+            // Update the memory map with the latest record
+            lastKnownSubs.set(guildId, sub);
         }
+    } catch (err) {
+        console.error('[DbListenerService] Polling Error:', err.message);
     }
 }
 
