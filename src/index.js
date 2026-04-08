@@ -1,7 +1,7 @@
 require('dotenv').config({ quiet: true });
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH errors on VPS
-const { Client, GatewayIntentBits, ActivityType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Events } = require('discord.js');
 const { LINKS } = require('./constants/constants');
 const config = require('./config/config');
 const fs = require('fs');
@@ -82,7 +82,7 @@ if (config.TOPGG_TOKEN) {
 }
 
 // Client ready event
-client.once('clientReady', async (c) => {
+client.once(Events.ClientReady, async (c) => {
     // Uygulama emojilerini yükle
     try {
         await c.application.emojis.fetch();
