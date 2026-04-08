@@ -18,7 +18,7 @@ module.exports = {
     MAX_ACTIVE_PARTIES: 3,
 
     // Activity
-    ACTIVITY_TEXT: '/partikur',
+    ACTIVITY_TEXT: '/createparty & /help',
 
     // Security
     WHITELIST_USERS: process.env.OWNER_ID ? [process.env.OWNER_ID] : [],
