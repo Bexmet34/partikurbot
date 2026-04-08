@@ -45,9 +45,8 @@ const LOGO_NAME = 'logo.png';
 const LINKS = {
     WEBSITE: 'https://veyronixbot.vercel.app/',
     SUPPORT_SERVER: 'https://discord.gg/PDg53GbBCw',
-    SUPPORT_ACCOUNT: 'https://discord.com/users/335891393690140673', // Example support account link
+    SUPPORT_ACCOUNT: 'https://discord.com/users/335891393690140673',
     TOPGG: 'https://top.gg/bot/1082239904169336902',
-    TOPGG_VOTE: 'https://top.gg/bot/1082239904169336902/vote',
     SHOPIER: 'https://www.shopier.com/veyronixbot'
 };
 

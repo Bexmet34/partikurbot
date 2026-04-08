@@ -33,35 +33,24 @@ module.exports = {
         title_page_0: '🛡️ Veyronix | Help Menu',
         desc_page_0: 'Advanced management and party bot developed for Albion Online servers.\n\nBelow you can find the bot\'s main features, player commands, and management tools in an organized way.\n\n> Pro tip: You can see commands quickly by typing `/`, and you must have the necessary permissions for administrator commands.',
         field_features_title: '✨ Key Features',
-        field_features_value: '• Dynamic party recruitment system\n• Player statistics lookup\n• Guild member listing\n• Whitelist management\n• Server-specific language and system settings\n• Advanced punishment system',
+        field_features_value: '• Dynamic party recruitment system\n• Player statistics lookup\n• Guild member listing\n• Whitelist management\n• Server-specific language and system settings',
         field_categories_title: '📌 Command Categories',
-        field_categories_value: '• Party Commands\n• Player Information Commands\n• Management Commands\n• Punishment System Commands',
+        field_categories_value: '• Party Commands\n• Player Information Commands\n• Management Commands',
         field_nav_title: '🧭 Quick Navigation',
-        field_nav_value: 'This help menu consists of 3 sections:\n**1. General Information**\n**2. Basic & Management Commands**\n**3. Punishment System Commands**',
-        footer_page_0: 'Page 1/3 • General Information',
+        field_nav_value: 'This help menu consists of 2 sections:\n**1. General Information**\n**2. Basic & Management Commands**',
+        footer_page_0: 'Page 1/2 • General Information',
 
         title_page_1: '⚔️ Veyronix | Basic & Management Commands',
         desc_page_1: 'The following commands are used for daily usage, party management, and server settings.',
-        footer_page_1: 'Page 2/3 • Basic & Management Commands',
-
-        title_page_2: '🚨 Veyronix | Punishment System Commands',
-        desc_page_2: 'The punishment system is developed for user tracking, incident recording, and server discipline management.',
-        field_ceza_ayar_title: '🛠️ /ceza-ayar',
-        field_ceza_ayar_value: 'Used to manage technical settings of the punishment system. This command has 4 sub-commands:',
-        field_note_title: '💡 Note',
-        field_note_value: 'It is recommended to complete the channel, role, and authorized role settings for the punishment system to work correctly.',
-        footer_page_2: 'Page 3/3 • Punishment System Commands',
+        footer_page_1: 'Page 2/2 • Basic & Management Commands',
 
         page_1: 'Command List',
         page_2: 'Management',
-        page_3: 'Punishment',
-        top_gg: 'Top.gg',
         cmd_createparty: 'Opens a dynamic form. Allows you to set content, location, and custom roles.',
         cmd_stats: 'Displays an Albion Online (Europe) player\'s statistics.',
         cmd_members: 'Lists your guild\'s active members page by page.',
         cmd_settings: 'Defines the guild name and Albion Guild ID for the system.',
         cmd_help: 'Opens this interactive menu.',
-        cmd_vote: 'Provides the link to vote for the bot and support us.',
         donate_button: '🛒 Buy & Rent / Subscribe'
     },
     settings: {
@@ -95,9 +84,7 @@ module.exports = {
         party_time_label: 'Event Time (Numbers Only)',
         party_time_placeholder: 'e.g., 2130',
         party_leader: 'Party Leader',
-        party_description: 'Description',
-        vote_required: '⚠️ You must vote for our bot to use this command!',
-        vote_link_text: 'Vote Now'
+        party_description: 'Description'
     },
     manage: {
         settings_title: 'Party Settings',
@@ -135,19 +122,10 @@ module.exports = {
         guild_members: 'Guild Members'
     },
     whitelist: {
-
         added: 'successfully added to the whitelist.',
         removed: 'successfully removed from the whitelist.',
         already_in: 'is already on the whitelist.',
-        not_found: 'not found on the whitelist.',
-        added_premium: 'successfully added to the premium list (Skip voting).',
-        removed_premium: 'successfully removed from the premium list.'
-    },
-    vote: {
-        title: '🗳️ Veyronix | Vote',
-        description: 'You can support us and contribute to our development by voting for our bot.\n\nYou can continue your support by voting every **12 hours**. Thank you! ❤️',
-        button_text: 'Vote Now',
-        info_reminder: '💡 **Enjoying the Bot?**\nYou can show your support by using the `/vote` command to vote for us!'
+        not_found: 'not found on the whitelist.'
     },
     subscription: {
         expired_title: '❌ Subscription Expired',

@@ -7,7 +7,7 @@ const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
-const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handlePremiumAddCommand, handlePremiumRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect, handleSubscriptionModal } = require('./handlers/commandHandler');
+const { handleHelpCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect, handleSubscriptionModal } = require('./handlers/commandHandler');
 
 const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
 
@@ -17,15 +17,10 @@ const { AutoPoster } = require('topgg-autoposter');
 const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleJoinMultiRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
-const { handleCezaButton, handleCezaAyarCommand, handleCezaCommand, handleCezaGecmisCommand } = require('./handlers/cezaHandler');
 const { initDb } = require('./services/db');
 const { getGuildConfig } = require('./services/guildConfig');
 const { MessageFlags } = require('discord.js');
 const { t } = require('./services/i18n');
-
-
-
-
 
 // Create Discord client
 const { Partials } = require('discord.js');
@@ -34,13 +29,12 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMembers,   // Ceza sistemi: rol/nick işlemleri için
-        GatewayIntentBits.DirectMessages, // Ceza sistemi: DM bildirimleri için
-        GatewayIntentBits.GuildEmojisAndStickers // Kendi özel emojilerimizi çekebilmek için
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.GuildEmojisAndStickers
     ],
-    partials: [Partials.Channel], // DM kanallarını almak için gerekli
+    partials: [Partials.Channel],
 });
-
 
 // Error handling to prevent crashes
 client.on('error', async error => {
@@ -70,8 +64,6 @@ async function startBot() {
     try {
         await initDb();
         await client.login(config.DISCORD_TOKEN);
-
-
     } catch (error) {
         console.error('Bot login error:', error);
         setTimeout(startBot, 5000);
@@ -91,10 +83,9 @@ if (config.TOPGG_TOKEN) {
 
 // Client ready event
 client.once('clientReady', async (c) => {
-    // Uygulama emojilerini yükle (Application Emojis)
+    // Uygulama emojilerini yükle
     try {
         await c.application.emojis.fetch();
-        // console.log(`✅ ${c.application.emojis.cache.size} adet uygulama emojisi yüklendi.`);
     } catch (err) {
         console.error('❌ Uygulama emojileri çekilirken hata oluştu:', err);
     }
@@ -110,59 +101,45 @@ client.once('clientReady', async (c) => {
     console.log(`🌍 Service active on ${c.guilds.cache.size} servers.`);
     console.log('-------------------------------------------');
 
-    // Sunucuları Supabase ile senkronize et (Otomatik Import)
+    // Sunucuları Supabase ile senkronize et
     const { getSubscription } = require('./services/subscriptionService');
     const guilds = c.guilds.cache;
     guilds.forEach(async (guild) => {
         try {
             await getSubscription(guild.id, guild.name, guild.ownerId);
-        } catch (err) {
-            // Sessizce devam et
-        }
+        } catch (err) { }
     });
 
     // Set activity safely
     try {
         client.user.setActivity(config.ACTIVITY_TEXT || '/help', { type: ActivityType.Listening });
-    } catch (err) {
-
-        // Silently fail activity set
-    }
+    } catch (err) { }
 
     registerCommands(client);
 
-
-
-
-    // Güncelleme Bildirimi Kontrolü
+    // Güncelleme Bildirimi
     const updateFilePath = path.join(process.cwd(), '.update_success');
     if (fs.existsSync(updateFilePath)) {
         try {
-            const ownerId = config.WHITELIST_USERS[0];
+            const ownerId = config.OWNER_ID;
             if (ownerId) {
                 const owner = await client.users.fetch(ownerId);
                 if (owner) {
                     await owner.send('🚀 **Bot Başarıyla Güncellendi!**\nGitHub\'dan en son değişiklikler çekildi ve bot yeniden başlatıldı. Sistem şu an aktif.');
-                    console.log(`[Bildirim] Güncelleme mesajı ${owner.tag} kullanıcısına gönderildi.`);
                 }
             }
-            fs.unlinkSync(updateFilePath); // Dosyayı sil
-        } catch (err) {
-            console.error('[Bildirim] Güncelleme mesajı gönderilirken hata:', err);
-            console.error(t('bot.update_notification_error', defaultLang), err);
-        }
+            fs.unlinkSync(updateFilePath);
+        } catch (err) { }
     }
 });
 
-// Guild join event - Handle trial start and notification
+// Guild join event
 client.on('guildCreate', async (guild) => {
     try {
         console.log(`[GuildCreate] Joined new server: ${guild.name} (${guild.id})`);
-        
         const { getSubscription } = require('./services/subscriptionService');
         const sub = await getSubscription(guild.id, guild.name, guild.ownerId);
 
-        // Only notify if it's the first time (trial created) or if they haven't been notified (we can check trial_used but that might be reset).
         if (!sub || !sub.created) return;
 
         const owner = await guild.members.fetch(guild.ownerId).catch(() => null);
@@ -190,9 +167,7 @@ client.on('guildCreate', async (guild) => {
                     .setStyle(ButtonStyle.Link)
             );
 
-            await owner.send({ embeds: [welcomeEmbed], components: [row] }).catch(() => {
-                console.log(`[GuildCreate] Could not send DM to owner of ${guild.name}`);
-            });
+            await owner.send({ embeds: [welcomeEmbed], components: [row] }).catch(() => { });
         }
     } catch (err) {
         console.error('[GuildCreate] Error:', err.message);
@@ -201,19 +176,9 @@ client.on('guildCreate', async (guild) => {
 
 client.on('interactionCreate', async interaction => {
     try {
-        if (interaction.guildId) {
-            const guildSettings = await getGuildConfig(interaction.guildId);
-            const lang = guildSettings?.language || 'tr';
-
-            // No longer checking globally for Albion configuration. 
-            // Individual commands will check for their required settings.
-        }
-
         if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'help') {
                 await handleHelpCommand(interaction);
-            } else if (interaction.commandName === 'vote') {
-                await handleVoteCommand(interaction);
             } else if (interaction.commandName === 'createparty') {
                 await handleCreatePartyCommand(interaction);
             } else if (interaction.commandName === 'closeparty') {
@@ -226,29 +191,15 @@ client.on('interactionCreate', async interaction => {
                 await handleWhitelistAddCommand(interaction);
             } else if (interaction.commandName === 'whitelistremove') {
                 await handleWhitelistRemoveCommand(interaction);
-            } else if (interaction.commandName === 'premiumadd') {
-                await handlePremiumAddCommand(interaction);
-            } else if (interaction.commandName === 'premiumremove') {
-                await handlePremiumRemoveCommand(interaction);
             } else if (interaction.commandName === 'settings') {
                 await handleSettingsCommand(interaction);
-            } else if (interaction.commandName === 'ceza') {
-                await handleCezaCommand(interaction);
-            } else if (interaction.commandName === 'ceza-gecmis') {
-                await handleCezaGecmisCommand(interaction);
-            } else if (interaction.commandName === 'ceza-ayar') {
-                await handleCezaAyarCommand(interaction);
             } else if (interaction.commandName === 'servers') {
                 await handleServersCommand(interaction);
             } else if (interaction.commandName === 'subscription') {
                 await handleSubscriptionCommand(interaction);
             }
         } else if (interaction.isButton()) {
-            // Önce ceza butonunu kontrol et
-            const wasCezaButton = await handleCezaButton(interaction, client);
-            if (!wasCezaButton) {
-                await handlePartyButtons(interaction);
-            }
+            await handlePartyButtons(interaction);
         } else if (interaction.isStringSelectMenu()) {
             if (interaction.customId.startsWith('manage_party_')) {
                 await handleManageMenu(interaction);
@@ -286,10 +237,7 @@ client.on('interactionCreate', async interaction => {
         const lang = guildSettings?.language || 'tr';
         await handleInteractionError(interaction, error, lang);
     }
-
 });
-
-
 
 // Start the bot
 startBot();

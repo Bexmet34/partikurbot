@@ -27,6 +27,7 @@ function initDb() {
                 type TEXT, -- pve, pvp
                 title TEXT,
                 status TEXT DEFAULT 'active', -- active, closed, pending, verified
+                party_time TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
 
@@ -41,7 +42,7 @@ function initDb() {
                 FOREIGN KEY(party_id) REFERENCES parties(id) ON DELETE CASCADE
             )`);
 
-            // System settings for persistent configs (like leaderboard message ID)
+            // System settings for persistent configs
             db.run(`CREATE TABLE IF NOT EXISTS system_settings (
                 key TEXT PRIMARY KEY,
                 value TEXT
@@ -58,7 +59,7 @@ function initDb() {
                 last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
 
-            // Per-guild configurations for public use
+            // Per-guild configurations
             db.run(`CREATE TABLE IF NOT EXISTS guild_configs (
                 guild_id TEXT PRIMARY KEY,
                 guild_name TEXT,
@@ -69,51 +70,23 @@ function initDb() {
                 setup_completed INTEGER DEFAULT 0
             )`);
 
-
             // Per-guild whitelist for party limit bypass
             db.run(`CREATE TABLE IF NOT EXISTS guild_whitelist (
                 guild_id TEXT,
                 user_id TEXT,
                 PRIMARY KEY (guild_id, user_id)
-            )`);
-
-            // Vote bypass for skip vote (per guild or GLOBAL)
-            db.run(`CREATE TABLE IF NOT EXISTS vote_bypass (
-                guild_id TEXT,
-                user_id TEXT,
-                PRIMARY KEY (guild_id, user_id)
             )`, (err) => {
-
-
                 if (err) reject(err);
                 else {
-                    // Migration for existing tables: Add columns if they don't exist
+                    // Migration for existing tables
                     db.serialize(() => {
                         db.run("ALTER TABLE user_stats ADD COLUMN pve_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE user_stats ADD COLUMN pvp_confirmed INTEGER DEFAULT 0", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN language TEXT DEFAULT 'tr'", () => { });
                         db.run("ALTER TABLE guild_configs ADD COLUMN welcome_message TEXT DEFAULT 'Selam, Hoşgeldiniz!'", () => { });
                         db.run("ALTER TABLE parties ADD COLUMN party_time TEXT", () => { });
-                        
-                        // Migration for vote_bypass: add guild_id if missing or reset if it's broken
-                        db.all("PRAGMA table_info(vote_bypass)", (err, info) => {
-                            if (info && !info.some(c => c.name === 'guild_id')) {
-                                db.serialize(() => {
-                                    db.run("DROP TABLE IF EXISTS vote_bypass");
-                                    db.run(`CREATE TABLE IF NOT EXISTS vote_bypass (
-                                        guild_id TEXT,
-                                        user_id TEXT,
-                                        PRIMARY KEY (guild_id, user_id)
-                                    )`);
-                                });
-                            }
-                        });
-
-                        // Ensure system_settings exists for existing DBs
-                        db.run(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT)`, () => { });
                         resolve();
                     });
-
                 }
             });
         });

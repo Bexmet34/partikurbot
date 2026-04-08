@@ -6,13 +6,11 @@ const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
 const { hasActiveParty, setActiveParty, getActiveParties, removeActiveParty, getActivePartyCount } = require('../services/partyManager');
 const { addToWhitelist, removeFromWhitelist, isWhitelisted } = require('../services/whitelistManager');
-const { addToVoteBypass, removeFromVoteBypass, HARDCODED_OWNER_ID } = require('../services/voteBypassManager');
 const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
 const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig');
 const { t } = require('../services/i18n');
-
 
 /**
  * Handles /help command
@@ -25,18 +23,13 @@ async function handleHelpCommand(interaction) {
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('help_page_2').setLabel(`🚨 ${t('help.page_3', lang)}`).setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary)
     );
-
-    // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects
 
     const linkRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(LINKS.WEBSITE),
-        new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(LINKS.TOPGG),
         new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL(LINKS.SHOPIER)
     );
-
 
     return await safeReply(interaction, {
         embeds: [embed],
@@ -44,12 +37,6 @@ async function handleHelpCommand(interaction) {
         flags: [MessageFlags.Ephemeral]
     });
 }
-
-
-
-
-
-
 
 /**
  * Handles /closeparty command
@@ -77,7 +64,6 @@ async function handleClosePartyCommand(interaction) {
 
         let totalClosed = 0;
 
-        // Use a copy of the array if needed, though getActiveParties returns a new array from JSON.parse
         for (const partyInfo of parties) {
             const messageId = typeof partyInfo === 'object' ? partyInfo.messageId : partyInfo;
             const channelId = typeof partyInfo === 'object' ? partyInfo.channelId : null;
@@ -85,14 +71,11 @@ async function handleClosePartyCommand(interaction) {
             if (channelId && messageId) {
                 try {
                     const channel = await interaction.client.channels.fetch(channelId).catch(() => null);
-                    if (!channel) {
-                        console.log(`[CommandHandler] Channel ${channelId} not found or inaccessible for party ${messageId}`);
-                    } else {
+                    if (channel) {
                         const message = await channel.messages.fetch(messageId).catch(() => null);
 
                         if (message && message.embeds && message.embeds[0]) {
                             const oldEmbed = message.embeds[0];
-                            // FIX: Added optional chaining and default empty array for fields
                             const fields = oldEmbed.fields || [];
                             const newFields = fields.filter(f => f.name && !f.name.includes('📌') && !f.name.includes('KURALLAR'));
 
@@ -111,25 +94,13 @@ async function handleClosePartyCommand(interaction) {
                                 embeds: [closedEmbed], 
                                 components: [closedRow],
                                 files: [new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME })]
-                            }).catch(e => {
-                                console.log(`[CommandHandler] Message edit failed for ${messageId}: ${e.message}`);
-                            });
+                            }).catch(() => { });
                             totalClosed++;
                         }
                     }
-                } catch (err) {
-                    console.log(`[CommandHandler] Visual close failed for ${messageId}: ${err.message}`);
-                }
+                } catch (err) { }
             }
-
-            // Clear each one from JSON DB
-            try {
-                removeActiveParty(userId, messageId);
-            } catch (dbErr) {
-                console.error(`[CommandHandler] Failed to remove party ${messageId} from JSON DB:`, dbErr);
-            }
-
-            // Also attempt to clear from SQLite DB
+            removeActiveParty(userId, messageId);
             try {
                 await db.run('UPDATE parties SET status = ? WHERE message_id = ?', ['closed', messageId]).catch(() => { });
             } catch (dbErr) { }
@@ -143,25 +114,8 @@ async function handleClosePartyCommand(interaction) {
 
     } catch (error) {
         console.error('[CommandHandler] Critical Error in handleClosePartyCommand:', error);
-
-        // Emergency cleanup: wipe all parties for this user if something went wrong
-        try {
-            const parties = getActiveParties(userId);
-            if (Array.isArray(parties)) {
-                parties.forEach(p => {
-                    const mid = typeof p === 'object' ? p.messageId : p;
-                    removeActiveParty(userId, mid);
-                });
-            } else {
-                removeActiveParty(userId); // Total wipe for user
-            }
-
-            // Wipe from SQLite too
-            await db.run('UPDATE parties SET status = ? WHERE owner_id = ? AND status = ?', ['closed', userId, 'active']).catch(() => { });
-        } catch (backupErr) {
-            console.error('[CommandHandler] Emergency cleanup failed:', backupErr);
-        }
-
+        removeActiveParty(userId);
+        await db.run('UPDATE parties SET status = ? WHERE owner_id = ? AND status = ?', ['closed', userId, 'active']).catch(() => { });
         await interaction.followUp({
             content: `❌ **${t('common.error', lang)}**\n${error.message}`,
             flags: [MessageFlags.Ephemeral]
@@ -177,7 +131,7 @@ async function handleWhitelistAddCommand(interaction) {
     const lang = guildConfig?.language || 'tr';
 
     const userId = interaction.user.id;
-    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isBotOwner = userId === config.OWNER_ID;
     const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
     const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
@@ -200,7 +154,6 @@ async function handleWhitelistAddCommand(interaction) {
     }
 }
 
-
 /**
  * Handles /whitelistremove command
  */
@@ -209,7 +162,7 @@ async function handleWhitelistRemoveCommand(interaction) {
     const lang = guildConfig?.language || 'tr';
 
     const userId = interaction.user.id;
-    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
+    const isBotOwner = userId === config.OWNER_ID;
     const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
     const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
@@ -224,65 +177,8 @@ async function handleWhitelistRemoveCommand(interaction) {
             content: `✅ **${targetUser.tag}** ${t('whitelist.removed', lang)}`,
             flags: [MessageFlags.Ephemeral]
         });
-    } else {
     }
 }
-
-
-/**
- * Handles /globalwhitelistadd command
- */
-async function handleGlobalWhitelistAddCommand(interaction) {
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-
-    const isOwner = interaction.user.id === config.OWNER_ID;
-    if (!isOwner) {
-        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
-    }
-
-    const targetUser = interaction.options.getUser('user');
-
-    if (await addToGlobalWhitelist(targetUser.id)) {
-        return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** ${t('whitelist.added_global', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    } else {
-        return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** ${t('whitelist.already_in', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-}
-
-/**
- * Handles /globalwhitelistremove command
- */
-async function handleGlobalWhitelistRemoveCommand(interaction) {
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-
-    const isOwner = interaction.user.id === config.OWNER_ID;
-    if (!isOwner) {
-        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
-    }
-
-    const targetUser = interaction.options.getUser('user');
-
-    if (await removeFromGlobalWhitelist(targetUser.id)) {
-        return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** ${t('whitelist.removed_global', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    } else {
-        return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** ${t('whitelist.not_found', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-}
-
 
 /**
  * Pagination helper for member list
@@ -308,7 +204,6 @@ function createMemberPageEmbed(members, page = 0, guild = null, lang = 'tr') {
  * Handles /members command
  */
 async function handleMembersCommand(interaction) {
-
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
     const guildId = guildConfig?.albion_guild_id;
@@ -321,11 +216,9 @@ async function handleMembersCommand(interaction) {
 
     try {
         const members = await getEuropeGuildMembers(guildId);
-        // Sort alphabetically
         members.sort((a, b) => a.Name.localeCompare(b.Name));
 
         const embed = createMemberPageEmbed(members, 0, interaction.guild, lang);
-
 
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -347,27 +240,22 @@ async function handleMembersCommand(interaction) {
     }
 }
 
-
 /**
  * Handles /stats command
  */
 async function handleStatsCommand(interaction) {
-
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
     const ign = interaction.options.getString('name');
 
-
     await interaction.deferReply();
 
     try {
-        // 1. Oyuncuyu ara ve ID'sini bul
         const playerData = await searchPlayer(ign);
         if (!playerData) {
             return await interaction.editReply({ content: `❌ **${ign}** ${t('stats.not_found', lang)}` });
         }
 
-        // 2. ID ile detaylı istatistikleri çek
         const stats = await getPlayerStats(playerData.Id);
 
         const pve = stats.LifetimeStatistics?.PvE || {};
@@ -381,110 +269,25 @@ async function handleStatsCommand(interaction) {
         const embed = new EmbedBuilder()
             .setTitle(`👤 ${t('stats.profile', lang)}: ${stats.Name}`)
             .setColor('#3498DB')
-            .setThumbnail(`https://render.albiononline.com/v1/spell/PLAYER_PORTRAIT_FARMER.png`) // Geçici ikon
+            .setThumbnail(`https://render.albiononline.com/v1/spell/PLAYER_PORTRAIT_FARMER.png`)
             .addFields(
                 { name: `🏰 ${t('stats.guild', lang)}`, value: stats.GuildName || t('common.not_set', lang), inline: true },
                 { name: `🆔 ${t('stats.player_id', lang)}`, value: `\`${stats.Id}\``, inline: true },
                 { name: `⭐ ${t('stats.total_fame', lang)}`, value: (stats.KillFame || 0).toLocaleString(), inline: true },
-
                 { name: '\u200b', value: `⚔️ **${t('stats.pvp_title', lang)}**`, inline: false },
                 { name: `💀 ${t('stats.kill_fame', lang)}`, value: killFame.toLocaleString(), inline: true },
                 { name: `⚰️ ${t('stats.death_fame', lang)}`, value: deathFame.toLocaleString(), inline: true },
                 { name: `📊 ${t('stats.kd', lang)}`, value: kd.toString(), inline: true },
-
                 { name: '\u200b', value: `🏹 **${t('stats.pve_title', lang)}**`, inline: false },
-                { name: 'Total PVE', value: (pve.Total || 0).toLocaleString(), inline: true },
-                { name: 'Royals', value: (pve.Royal || 0).toLocaleString(), inline: true },
-                { name: 'Outlands', value: (pve.Outlands || 0).toLocaleString(), inline: true },
-                { name: 'Avalon', value: (pve.Avalon || 0).toLocaleString(), inline: true },
-                { name: 'Corrupted', value: (pve.CorruptedDungeon || 0).toLocaleString(), inline: true },
-                { name: 'Mists', value: (pve.Mists || 0).toLocaleString(), inline: true },
-
-                { name: '\u200b', value: `⛏️ **${t('stats.gathering_title', lang)}**`, inline: false },
-                { name: 'Gathering Total', value: (gathering.All?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Fiber', value: (gathering.Fiber?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Hide', value: (gathering.Hide?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Ore', value: (gathering.Ore?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Stone', value: (gathering.Rock?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Wood', value: (gathering.Wood?.Total || 0).toLocaleString(), inline: true },
-
-                { name: 'Crafting', value: (stats.LifetimeStatistics?.Crafting?.Total || 0).toLocaleString(), inline: true },
-                { name: 'Fishing', value: (stats.LifetimeStatistics?.FishingFame || 0).toLocaleString(), inline: true },
-                { name: 'Farming', value: (stats.LifetimeStatistics?.FarmingFame || 0).toLocaleString(), inline: true }
+                { name: 'Total PVE', value: (pve.Total || 0).toLocaleString(), inline: true }
             )
             .setFooter({ text: t('stats.api_footer', lang) })
             .setTimestamp();
 
         return await interaction.editReply({ embeds: [embed] });
-
     } catch (error) {
         console.error('[MeCommand] Hata:', error);
         return await interaction.editReply({ content: `❌ ${t('stats.api_error', lang)}: ${error.message}` });
-    }
-}
-
-/**
- * Handles /premiumadd command
- */
-async function handlePremiumAddCommand(interaction) {
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-
-    const userId = interaction.user.id;
-    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
-    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
-
-    if (!isBotOwner && !isGuildOwner) {
-        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
-    }
-
-    const targetUser = interaction.options.getUser('user');
-    // Bot owner adds GLOBAL by default, guild owner adds current guild
-    const targetGuildId = isBotOwner ? 'GLOBAL' : interaction.guildId;
-
-    if (await addToVoteBypass(targetUser.id, targetGuildId)) {
-        return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** ${t('whitelist.added_premium', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    } else {
-        return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** ${t('whitelist.already_in', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-}
-
-/**
- * Handles /premiumremove command
- */
-async function handlePremiumRemoveCommand(interaction) {
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-
-    const userId = interaction.user.id;
-    const isBotOwner = userId === HARDCODED_OWNER_ID || userId === config.OWNER_ID;
-    const isGuildOwner = interaction.guild && userId === interaction.guild.ownerId;
-
-    if (!isBotOwner && !isGuildOwner) {
-        return await safeReply(interaction, { content: `❌ ${t('common.owner_only', lang)}`, flags: [MessageFlags.Ephemeral] });
-    }
-
-    const targetUser = interaction.options.getUser('user');
-
-    // Bot owner deletes GLOBAL by default, guild owner deletes current guild
-    const targetGuildId = isBotOwner ? 'GLOBAL' : interaction.guildId;
-
-    if (await removeFromVoteBypass(targetUser.id, targetGuildId)) {
-        return await safeReply(interaction, {
-            content: `✅ **${targetUser.tag}** ${t('whitelist.removed_premium', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    } else {
-        return await safeReply(interaction, {
-            content: `❌ **${targetUser.tag}** ${t('whitelist.not_found', lang)}`,
-            flags: [MessageFlags.Ephemeral]
-        });
     }
 }
 
@@ -499,9 +302,7 @@ async function handleSettingsCommand(interaction) {
         .setTitle('⚙️ Bot Ayarları')
         .setDescription('Lütfen botun dilini aşağıdan seçin:')
         .setColor(3447003)
-        .addFields(
-            { name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true }
-        );
+        .addFields({ name: `Mevcut Dil`, value: lang === 'tr' ? '🇹🇷 Türkçe' : '🇺🇸 English', inline: true });
 
     const selectMenu = new StringSelectMenuBuilder()
         .setCustomId('settings_lang_select')
@@ -521,43 +322,13 @@ async function handleSettingsCommand(interaction) {
 }
 
 /**
- * Handles /vote command
- */
-async function handleVoteCommand(interaction) {
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-
-    const embed = new EmbedBuilder()
-        .setTitle(t('vote.title', lang))
-        .setDescription(t('vote.description', lang))
-        .setColor('#FF0055');
-
-    const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setLabel(t('vote.button_text', lang))
-            .setStyle(ButtonStyle.Link)
-            .setURL(LINKS.TOPGG_VOTE)
-    );
-
-    return await safeReply(interaction, {
-        embeds: [embed],
-        components: [row]
-    });
-}
-
-/**
  * Handles /servers command (Owner Only)
  */
 async function handleServersCommand(interaction) {
-    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || 
-                       interaction.user.id === config.OWNER_ID || 
-                       (config.WHITELIST_USERS && config.WHITELIST_USERS.includes(interaction.user.id));
+    const isBotOwner = interaction.user.id === config.OWNER_ID;
     
     if (!isBotOwner) {
-        return await safeReply(interaction, { 
-            content: '❌ Bu komutu sadece bot yetkilisi kullanabilir.', 
-            flags: [MessageFlags.Ephemeral] 
-        });
+        return await safeReply(interaction, { content: '❌ Bu komutu sadece bot yetkilisi kullanabilir.', flags: [MessageFlags.Ephemeral] });
     }
 
     const guilds = interaction.client.guilds.cache;
@@ -580,7 +351,7 @@ const { addSubscriptionDays, removeSubscriptionDays, setUnlimitedSubscription, s
  * Handles /subscription command (Owner Only)
  */
 async function handleSubscriptionCommand(interaction) {
-    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    const isBotOwner = interaction.user.id === config.OWNER_ID;
     
     if (!isBotOwner) {
         return await safeReply(interaction, { content: '❌ Bu komutu sadece bot sahibi kullanabilir.', flags: [MessageFlags.Ephemeral] });
@@ -619,8 +390,7 @@ function createSubscriptionEmbed(sub) {
             { name: 'Sunucu ID', value: `\`${sub.guild_id}\``, inline: true },
             { name: 'Durum', value: statusText, inline: true },
             { name: 'Sınırsız mı?', value: sub.is_unlimited ? 'Evet' : 'Hayır', inline: true },
-            { name: 'Bitiş Tarihi', value: sub.is_unlimited ? '∞' : `<t:${timestamp}:F> (<t:${timestamp}:R>)`, inline: false },
-            { name: 'Son Güncelleme', value: sub.updated_at ? `<t:${Math.floor(new Date(sub.updated_at).getTime() / 1000)}:R>` : 'Yok', inline: true }
+            { name: 'Bitiş Tarihi', value: sub.is_unlimited ? '∞' : `<t:${timestamp}:F> (<t:${timestamp}:R>)`, inline: false }
         )
         .setFooter({ text: 'Aşağıdaki menüden işlem seçiniz.' })
         .setTimestamp();
@@ -641,14 +411,13 @@ function createSubscriptionMenu(guildId, sub) {
 }
 
 async function handleSubscriptionSelect(interaction) {
-    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    const isBotOwner = interaction.user.id === config.OWNER_ID;
     if (!isBotOwner) return;
 
     const [_, guildId] = interaction.customId.split(':');
     const action = interaction.values[0];
 
     let success = false;
-    let message = '';
 
     if (action === 'add_custom' || action === 'rem_custom') {
         const modal = new ModalBuilder()
@@ -666,14 +435,10 @@ async function handleSubscriptionSelect(interaction) {
         return await interaction.showModal(modal);
     } else if (action === 'toggle_unlimited') {
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
-        const newValue = !sub?.is_unlimited;
-        success = await setUnlimitedSubscription(guildId, newValue);
-        message = `Sınırsız mod ${newValue ? 'AÇILDI' : 'KAPATILDI'}.`;
+        success = await setUnlimitedSubscription(guildId, !sub?.is_unlimited);
     } else if (action === 'toggle_active') {
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
-        const newValue = !sub?.is_active;
-        success = await setSubscriptionActive(guildId, newValue);
-        message = `Abonelik ${newValue ? 'AKTİF EDİLDİ' : 'DEVRE DIŞI BIRAKILDI'}.`;
+        success = await setSubscriptionActive(guildId, !sub?.is_active);
     }
 
     if (success) {
@@ -683,13 +448,11 @@ async function handleSubscriptionSelect(interaction) {
             components: [createSubscriptionMenu(guildId, updatedSub)],
             files: []
         });
-    } else {
-        await interaction.followUp({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
     }
 }
 
 async function handleSubscriptionModal(interaction) {
-    const isBotOwner = interaction.user.id === HARDCODED_OWNER_ID || (config.OWNER_ID && interaction.user.id === config.OWNER_ID);
+    const isBotOwner = interaction.user.id === config.OWNER_ID;
     if (!isBotOwner) return;
 
     const [_, action, guildId] = interaction.customId.split(':');
@@ -714,21 +477,16 @@ async function handleSubscriptionModal(interaction) {
             components: [createSubscriptionMenu(guildId, updatedSub)],
             files: []
         });
-    } else {
-        await interaction.reply({ content: '❌ İşlem sırasında bir hata oluştu.', flags: [MessageFlags.Ephemeral] });
     }
 }
 
 module.exports = {
     handleHelpCommand,
-    handleVoteCommand,
     handleClosePartyCommand,
     handleMembersCommand,
     handleStatsCommand,
     handleWhitelistAddCommand,
     handleWhitelistRemoveCommand,
-    handlePremiumAddCommand,
-    handlePremiumRemoveCommand,
     handleSettingsCommand,
     handleServersCommand,
     handleSubscriptionCommand,
@@ -736,4 +494,3 @@ module.exports = {
     handleSubscriptionModal,
     createMemberPageEmbed
 };
-
