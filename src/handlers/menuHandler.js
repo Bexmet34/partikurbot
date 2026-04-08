@@ -130,11 +130,11 @@ async function handleManageMembersOption(interaction, lang) {
     }
     if (!message || !message.embeds[0]) return;
     const fields = message.embeds[0].fields;
-    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('📌')));
+    const rollerFields = fields.filter(f => f.value && (f.value.includes('🔹') || /<a?:\w+:\d+>/.test(f.value) || f.value.includes('📌')));
     const rollerValue = rollerFields.map(f => f.value).join('\n');
 
 
-    const roleRegex = /(?:🔴|🟡)\s*(.*?):\s*<@(\d+)>/g;
+    const roleRegex = /(?:🔹|<a?:\w+:\d+>)\s*(.*?):\s*<@(\d+)>/g;
     let members = [];
     let match;
     while ((match = roleRegex.exec(rollerValue)) !== null) {

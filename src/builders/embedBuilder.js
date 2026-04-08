@@ -12,7 +12,7 @@ function parseEmbedData(embed, lang) {
     // Identify fields containing roles or headers
     const rollerFields = fields.filter(f => 
         (f.name && (f.name.includes('Roller') || f.name.includes('Roles') || f.name.includes('📌'))) ||
-        (f.value && (f.value.includes('🔴') || f.value.includes('🟡') || f.value.includes('🔹') || /<a?:\w+:\d+>/.test(f.value) || f.value.includes('📌')))
+        (f.value && (f.value.includes('🔹') || /<a?:\w+:\d+>/.test(f.value) || f.value.includes('📌')))
     );
 
     const infoField = fields.find(f => f.value && (f.value.includes('👑') || f.value.includes('📝')))?.value || '';
@@ -62,17 +62,17 @@ function parseEmbedData(embed, lang) {
             }
         }
 
-        // Parse roles from values (🔴, 🟡, 🔹 or custom emojis)
-        const entries = field.value.split(/(?=🔴|🟡|🔹|<a?:\w+:\d+>)/).map(e => e.trim()).filter(e => e.length > 0);
+        // Parse roles from values (🔹 or custom emojis)
+        const entries = field.value.split(/(?=🔹|<a?:\w+:\d+>)/).map(e => e.trim()).filter(e => e.length > 0);
         for (const entry of entries) {
             // If it's not a role entry, skip
-            if (!entry.startsWith('🔴') && !entry.startsWith('🟡') && !entry.startsWith('🔹') && !/^<a?:\w+:\d+>/.test(entry)) continue;
+            if (!entry.startsWith('🔹') && !/^<a?:\w+:\d+>/.test(entry)) continue;
 
             const lines = entry.split('\n');
             const firstLine = lines[0];
             const gear = lines.slice(1).join('\n').trim();
             
-            const lineMatch = firstLine.match(/^(?:🔴|🟡|🔹|<a?:\w+:\d+>)\s*(.*?):\s*(?:<@(\d+)>|)/);
+            const lineMatch = firstLine.match(/^(?:🔹|<a?:\w+:\d+>)\s*(.*?):\s*(?:<@(\d+)>|)/);
             if (lineMatch) {
                 const roleName = lineMatch[1].trim().replace(/\*\*/g, '');
                 const userId = lineMatch[2] || null;
@@ -152,17 +152,17 @@ function createEmbed(title, details, content, roles, isClosed = false, guild = n
     embed.addFields(
             { name: `👥 **${t('common.party_roster', lang)}**`, value: '\u200b', inline: false },
             {
-                name: `${roles.tank === '-' ? '🟡' : '🔴'} 1. Tank:`,
+                name: `${resolveRoleEmoji('Tank', guild)} 1. Tank:`,
                 value: roles.tank,
                 inline: false
             },
             {
-                name: `${roles.heal === '-' ? '🟡' : '🔴'} 2. Heal:`,
+                name: `${resolveRoleEmoji('Heal', guild)} 2. Heal:`,
                 value: roles.heal,
                 inline: false
             },
             ...roles.dps.map((d, index) => ({
-                name: `${d === '-' ? '🟡' : '🔴'} ${index + 3}. DPS:`,
+                name: `${resolveRoleEmoji('DPS', guild)} ${index + 3}. DPS:`,
                 value: d,
                 inline: false
             }))

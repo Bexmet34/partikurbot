@@ -95,7 +95,7 @@ function createSelectMenuPartyComponents(rolesList, ownerId, lang, rolesWithMemb
         new ButtonBuilder()
             .setCustomId('swap_roles_btn')
             .setLabel(lang === 'tr' ? 'Yedek Rol Seç' : 'Select Swap Role')
-            .setEmoji('🔄')
+            .setEmoji(resolveRoleEmoji('Swap', guildOrClient))
             .setStyle(ButtonStyle.Secondary)
     ));
 

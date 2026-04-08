@@ -4,7 +4,7 @@ const { updateButtonStates, createClosedButton, createCustomPartyComponents, isS
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
 const { createMemberPageEmbed } = require('./commandHandler');
-const { createProgressBar } = require('../utils/generalUtils');
+const { createProgressBar, resolveRoleEmoji } = require('../utils/generalUtils');
 const { getGuildConfig } = require('../services/guildConfig');
 const { createHelpEmbed, createDonateEmbed, createPartikurEmbed, addFooterFields, buildRolesValue, buildRolesFields, parseEmbedData } = require('../builders/embedBuilder');
 
@@ -224,7 +224,7 @@ async function handlePartyButtons(interaction) {
             const multiOption = new StringSelectMenuOptionBuilder()
                 .setLabel(label)
                 .setValue(`${index}`)
-                .setEmoji('🔄')
+                .setEmoji(resolveRoleEmoji('Swap', interaction.guild))
                 .setDescription(lang === 'tr' ? 'Yedek rol seçiminiz için işaretleyin' : 'Select for swap role option');
             
             multiJoinMenu.addOptions(multiOption);
