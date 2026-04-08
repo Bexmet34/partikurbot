@@ -51,6 +51,7 @@ module.exports = {
         cmd_members: 'Loncanızdaki aktif üyeleri sayfa sayfa listeler.',
         cmd_settings: 'Sistem için lonca ismini ve Albion Guild ID\'sini tanımlar.',
         cmd_help: 'Bu interaktif menüyü açar.',
+        cmd_vote: 'Oy vererek botumuza destek olmanızı sağlar.',
         donate_button: '🛒 Satın Al & Kirala / Abone Ol'
     },
     settings: {
@@ -120,6 +121,11 @@ module.exports = {
     },
     members: {
         guild_members: 'Lonca Üyeleri'
+    },
+    vote: {
+        title: '🗳️ Veyronix | Oy Ver',
+        description: 'Botumuza oy vererek gelişmemize katkıda bulunabilirsiniz. Desteğiniz için teşekkürler! ❤️',
+        button_text: 'Oy Ver'
     },
     whitelist: {
         added: 'başarıyla beyaz listeye eklendi.',

@@ -12,6 +12,7 @@ Bu komutlar tüm sunucu üyeleri tarafından kullanılabilir.
 | `/help` | Botun tüm özelliklerini ve komutlarını içeren interaktif yardım menüsünü açar. |
 | `/createparty` | Dinamik bir parti kurma formu açar (Başlık, Çıkış Yeri, Roller vb.). |
 | `/closeparty` | Kurucusu olduğunuz aktif partileri manuel olarak kapatmanızı sağlar. |
+| `/vote` | Botumuza destek olmak için Top.gg oy verme bağlatısını gönderir. |
 | `/stats [isim]` | Belirtilen oyuncunun Albion Online (Europe) istatistiklerini gösterir. |
 | `/members` | Loncanızdaki (Guild) tüm üyeleri alfabetik ve sayfalı olarak listeler. |
 

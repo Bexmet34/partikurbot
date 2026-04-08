@@ -23,7 +23,8 @@ async function handleHelpCommand(interaction) {
 
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId('help_page_0').setLabel('🏠').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('help_page_1').setLabel(`⚔️ ${t('help.page_2', lang)}`).setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('help_vote').setLabel(`🗳️ /vote`).setStyle(ButtonStyle.Success)
     );
 
     const linkRow = new ActionRowBuilder().addComponents(
@@ -480,8 +481,42 @@ async function handleSubscriptionModal(interaction) {
     }
 }
 
+/**
+ * Handles /vote command
+ */
+async function handleVoteCommand(interaction) {
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    const lang = guildConfig?.language || 'tr';
+
+    const embed = new EmbedBuilder()
+        .setTitle(t('vote.title', lang))
+        .setDescription(t('vote.description', lang))
+        .setColor('#5865F2')
+        .setThumbnail(`attachment://${LOGO_NAME}`)
+        .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setLabel(t('vote.button_text', lang))
+            .setStyle(ButtonStyle.Link)
+            .setURL(LINKS.TOPGG)
+    );
+
+    const { AttachmentBuilder } = require('discord.js');
+    const { LOGO_PATH } = require('../constants/constants');
+    const logo = new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME });
+
+    return await safeReply(interaction, {
+        embeds: [embed],
+        components: [row],
+        files: [logo],
+        flags: [MessageFlags.Ephemeral]
+    });
+}
+
 module.exports = {
     handleHelpCommand,
+    handleVoteCommand,
     handleClosePartyCommand,
     handleMembersCommand,
     handleStatsCommand,

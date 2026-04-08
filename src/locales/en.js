@@ -51,6 +51,7 @@ module.exports = {
         cmd_members: 'Lists your guild\'s active members page by page.',
         cmd_settings: 'Defines the guild name and Albion Guild ID for the system.',
         cmd_help: 'Opens this interactive menu.',
+        cmd_vote: 'Support the bot by voting on Top.gg.',
         donate_button: '🛒 Buy & Rent / Subscribe'
     },
     settings: {
@@ -120,6 +121,11 @@ module.exports = {
     },
     members: {
         guild_members: 'Guild Members'
+    },
+    vote: {
+        title: '🗳️ Veyronix | Vote',
+        description: 'You can contribute to our development by voting for our bot. Thank you for your support! ❤️',
+        button_text: 'Vote Now'
     },
     whitelist: {
         added: 'successfully added to the whitelist.',
