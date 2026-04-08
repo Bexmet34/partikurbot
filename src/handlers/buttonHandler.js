@@ -1,5 +1,5 @@
 const { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { EMPTY_SLOT, LOGO_PATH, LOGO_NAME } = require('../constants/constants');
+const { EMPTY_SLOT, LOGO_PATH, LOGO_NAME, LINKS } = require('../constants/constants');
 const { updateButtonStates, createClosedButton, createCustomPartyComponents, isSelectMenuMode } = require('../builders/componentBuilder');
 const { removeActiveParty } = require('../services/partyManager');
 const { getEuropeGuildMembers } = require('../services/albionApiService');
@@ -42,9 +42,9 @@ async function handlePartyButtons(interaction) {
         );
 
         const linkRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(config.WEBSITE_LINK),
-            new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(config.TOPGG_LINK),
-            new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/CyberShadows/44734656')
+            new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(LINKS.WEBSITE),
+            new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(LINKS.TOPGG),
+            new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL(LINKS.SHOPIER)
         );
 
 

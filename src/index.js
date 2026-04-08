@@ -2,6 +2,7 @@ require('dotenv').config({ quiet: true });
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent ENETUNREACH errors on VPS
 const { Client, GatewayIntentBits, ActivityType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { LINKS } = require('./constants/constants');
 const config = require('./config/config');
 const fs = require('fs');
 const path = require('path');
@@ -178,11 +179,11 @@ client.on('guildCreate', async (guild) => {
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setLabel('Destek Sunucusu | Support Server')
-                    .setURL(config.SUPPORT_SERVER_LINK)
+                    .setURL(LINKS.SUPPORT_SERVER)
                     .setStyle(ButtonStyle.Link),
                 new ButtonBuilder()
                     .setLabel('Web Sitesi | Website')
-                    .setURL(config.WEBSITE_LINK)
+                    .setURL(LINKS.WEBSITE)
                     .setStyle(ButtonStyle.Link)
             );
 

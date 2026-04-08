@@ -158,6 +158,12 @@ module.exports = {
         one_day_warning_title: '⚠️ Subscription Expiring Soon!',
         one_day_warning_desc: 'Your Discord Bot subscription for **{guildName}** will expire in **less than 24 hours**.\n\nOnce expired, the `/createparty` command will no longer be available. You can join our support server now to extend your subscription.',
         expires_at: 'Expiration Date',
-        join_support: 'Join Support Server'
+        join_support: 'Join Support Server',
+        notification_extended_title: '📅 Subscription Extended',
+        notification_extended_desc: 'The subscription for **{guildName}** has been extended by **{days} days**.',
+        notification_unlimited_title: '♾️ Unlimited Subscription Activated',
+        notification_unlimited_desc: 'Unlimited subscription has been defined for **{guildName}**. You can now use the bot without limits!',
+        notification_disabled_title: '🚫 Server Disabled',
+        notification_disabled_desc: 'The server **{guildName}** has been disabled by the system. Please contact the support team.'
     }
 };

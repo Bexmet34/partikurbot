@@ -158,6 +158,12 @@ module.exports = {
         one_day_warning_title: '⚠️ Abonelik Süreniz Bitmek Üzere!',
         one_day_warning_desc: '**{guildName}** sunucusu için Discord Bot aboneliğinizin süresi **24 saatten az** bir süre sonra dolacaktır.\n\nSüre dolduğunda `/createparty` komutu kullanılamayacaktır. Süreyi uzatmak için hemen destek sunucumuza katılabilirsiniz.',
         expires_at: 'Bitiş Tarihi',
-        join_support: 'Destek Sunucusuna Katıl'
+        join_support: 'Destek Sunucusuna Katıl',
+        notification_extended_title: '📅 Abonelik Süresi Uzatıldı',
+        notification_extended_desc: '**{guildName}** sunucusunun abonelik süresi **{days} gün** uzatıldı.',
+        notification_unlimited_title: '♾️ Sınırsız Abonelik Aktif Edildi',
+        notification_unlimited_desc: '**{guildName}** sunucusu için sınırsız abonelik tanımlandı. Artık botu sınırsız kullanabilirsiniz!',
+        notification_disabled_title: '🚫 Sunucu Devre Dışı Bırakıldı',
+        notification_disabled_desc: '**{guildName}** sunucusu sistem tarafından devre dışı bırakıldı. Lütfen destek ekibi ile iletişime geçin.'
     }
 };

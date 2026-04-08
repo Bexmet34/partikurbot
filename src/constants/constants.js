@@ -29,9 +29,6 @@ const getNotlarMetni = (guildName, lang = 'tr') => {
     ].join('\n');
 };
 
-
-
-
 // Role Icons
 const ROLE_ICONS = {
     TANK: '🛡️',
@@ -44,6 +41,16 @@ const path = require('path');
 const LOGO_PATH = path.join(__dirname, '..', '..', 'assets', 'images', 'logo.png');
 const LOGO_NAME = 'logo.png';
 
+// Project Links
+const LINKS = {
+    WEBSITE: 'https://veyronixbot.vercel.app/',
+    SUPPORT_SERVER: 'https://discord.gg/PDg53GbBCw',
+    SUPPORT_ACCOUNT: 'https://discord.com/users/335891393690140673', // Example support account link
+    TOPGG: 'https://top.gg/bot/1082239904169336902',
+    TOPGG_VOTE: 'https://top.gg/bot/1082239904169336902/vote',
+    SHOPIER: 'https://www.shopier.com/veyronixbot'
+};
+
 module.exports = {
     EMPTY_SLOT,
     SELECT_MENU_THRESHOLD,
@@ -51,6 +58,6 @@ module.exports = {
     getNotlarMetni,
     ROLE_ICONS,
     LOGO_PATH,
-    LOGO_NAME
+    LOGO_NAME,
+    LINKS
 };
-

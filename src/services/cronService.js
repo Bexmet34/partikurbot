@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const supabase = require('./supabaseClient');
+const { LINKS } = require('../constants/constants');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const config = require('../config/config');
 const { getGuildConfig } = require('./guildConfig');
@@ -53,7 +54,7 @@ function startCronService(client) {
                         const row = new ActionRowBuilder().addComponents(
                             new ButtonBuilder()
                                 .setLabel(t('subscription.join_support', lang))
-                                .setURL(config.SUPPORT_SERVER_LINK)
+                                .setURL(LINKS.SUPPORT_SERVER)
                                 .setStyle(ButtonStyle.Link)
                         );
 

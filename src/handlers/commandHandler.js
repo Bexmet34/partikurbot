@@ -1,5 +1,6 @@
 const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-const { DEFAULT_CONTENT, LOGO_NAME } = require('../constants/constants');
+const { DEFAULT_CONTENT, LOGO_NAME, LINKS } = require('../constants/constants');
+const { sendSubscriptionNotification } = require('../utils/notificationUtils');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
@@ -31,9 +32,9 @@ async function handleHelpCommand(interaction) {
     // Store image URLs in customId metadata for buttons if needed, but for now we rely on embedBuilder defaults or passed objects
 
     const linkRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(config.WEBSITE_LINK),
-        new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(config.TOPGG_LINK),
-        new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL('https://www.shopier.com/veyronixbot')
+        new ButtonBuilder().setLabel(`🌐 Website`).setStyle(ButtonStyle.Link).setURL(LINKS.WEBSITE),
+        new ButtonBuilder().setLabel(`🚀 ${t('help.top_gg', lang)}`).setStyle(ButtonStyle.Link).setURL(LINKS.TOPGG),
+        new ButtonBuilder().setLabel(t('help.donate_button', lang)).setStyle(ButtonStyle.Link).setURL(LINKS.SHOPIER)
     );
 
 
@@ -535,7 +536,7 @@ async function handleVoteCommand(interaction) {
         new ButtonBuilder()
             .setLabel(t('vote.button_text', lang))
             .setStyle(ButtonStyle.Link)
-            .setURL('https://top.gg/bot/1082239904169336902/vote')
+            .setURL(LINKS.TOPGG_VOTE)
     );
 
     return await safeReply(interaction, {
@@ -665,12 +666,22 @@ async function handleSubscriptionSelect(interaction) {
         return await interaction.showModal(modal);
     } else if (action === 'toggle_unlimited') {
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
-        success = await setUnlimitedSubscription(guildId, !sub?.is_unlimited);
-        message = `Sınırsız mod ${!sub?.is_unlimited ? 'AÇILDI' : 'KAPATILDI'}.`;
+        const newValue = !sub?.is_unlimited;
+        success = await setUnlimitedSubscription(guildId, newValue);
+        message = `Sınırsız mod ${newValue ? 'AÇILDI' : 'KAPATILDI'}.`;
+        
+        if (success && newValue) {
+            await sendSubscriptionNotification(interaction.client, guildId, 'unlimited');
+        }
     } else if (action === 'toggle_active') {
         const sub = await getSubscription(guildId, 'Sistem', interaction.user.id);
-        success = await setSubscriptionActive(guildId, !sub?.is_active);
-        message = `Abonelik ${!sub?.is_active ? 'AKTİF EDİLDİ' : 'DEVRE DIŞI BIRAKILDI'}.`;
+        const newValue = !sub?.is_active;
+        success = await setSubscriptionActive(guildId, newValue);
+        message = `Abonelik ${newValue ? 'AKTİF EDİLDİ' : 'DEVRE DIŞI BIRAKILDI'}.`;
+
+        if (success && !newValue) {
+            await sendSubscriptionNotification(interaction.client, guildId, 'disabled');
+        }
     }
 
     if (success) {
@@ -700,6 +711,9 @@ async function handleSubscriptionModal(interaction) {
     let success = false;
     if (action === 'add_custom') {
         success = await addSubscriptionDays(guildId, days);
+        if (success) {
+            await sendSubscriptionNotification(interaction.client, guildId, 'extended', days);
+        }
     } else if (action === 'rem_custom') {
         success = await removeSubscriptionDays(guildId, days);
     }

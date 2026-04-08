@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { NOTLAR_METNI, ROLE_ICONS } = require('../constants/constants');
+const { NOTLAR_METNI, ROLE_ICONS, LINKS } = require('../constants/constants');
 const config = require('../config/config');
 const { t } = require('../services/i18n');
 const { createProgressBar, cleanTitle, stripEmojis, resolveRoleEmoji } = require('../utils/generalUtils');
@@ -222,7 +222,7 @@ function addFooterFields(embed, currentCount, totalCount, lang = 'tr') {
         },
         {
             name: '',
-            value: `[Website](${config.WEBSITE_LINK}) - [Top.gg](${config.TOPGG_LINK}) - [Shop](https://www.shopier.com/veyronixbot)\n\n`
+            value: `[Website](${LINKS.WEBSITE}) - [Top.gg](${LINKS.TOPGG}) - [Shop](${LINKS.SHOPIER})\n\n`
         }
     );
 }
