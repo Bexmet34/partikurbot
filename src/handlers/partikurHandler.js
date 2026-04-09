@@ -154,6 +154,16 @@ async function handleTempCommand(interaction) {
         });
     }
 
+function getTemplateByIndex(templatesStr, indexStr) {
+    try {
+        let templates = typeof templatesStr === 'string' ? JSON.parse(templatesStr) : templatesStr;
+        const i = parseInt(indexStr, 10);
+        return templates[i];
+    } catch(e) {
+        return null;
+    }
+}
+
     const templateIndex = interaction.options.getString('template');
     const template = getTemplateByIndex(guildConfig?.party_templates, templateIndex);
     
