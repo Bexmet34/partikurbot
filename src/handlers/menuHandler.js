@@ -49,11 +49,12 @@ async function handleCloseOption(interaction, ownerId, lang) {
     const fields = oldEmbed.fields || [];
     const newFields = fields.filter(f => !f.value?.includes('📌') && !f.name?.includes('KURALLAR'));
 
+    const guildConfig = await getGuildConfig(message.guildId);
     const closedEmbed = EmbedBuilder.from(oldEmbed)
         .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
         .setColor('#808080')
         .setFields(newFields)
-        .setThumbnail(`attachment://${LOGO_NAME}`)
+        .setThumbnail(guildConfig?.embed_thumbnail_url || `attachment://${LOGO_NAME}`)
         .setFooter(null)
         .setTimestamp(null);
 
@@ -263,8 +264,11 @@ async function finalizeRoleUpdate(message, rolesWithMembers, multiRoleWaitlist, 
 
     const { createPartikurEmbed, buildRolesFields, buildWaitlistField, addFooterFields } = require('../builders/embedBuilder');
     const { createCustomPartyComponents } = require('../builders/componentBuilder');
+    const { getGuildConfig } = require('../services/guildConfig');
 
-    const newEmbed = createPartikurEmbed(title, rolesWithMembers.map(r => r.role), description, '', filledCount, message.guild, lang, ownerId);
+    const guildConfig = await getGuildConfig(message.guildId);
+
+    const newEmbed = createPartikurEmbed(title, rolesWithMembers.map(r => r.role), description, '', filledCount, message.guild, lang, ownerId, guildConfig?.embed_thumbnail_url);
     newEmbed.addFields(...buildRolesFields(rolesWithMembers, lang, message.guild));
     
     const waitlistField = buildWaitlistField(multiRoleWaitlist, rolesWithMembers, lang);

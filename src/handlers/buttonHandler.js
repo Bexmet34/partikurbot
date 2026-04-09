@@ -75,7 +75,7 @@ async function handlePartyButtons(interaction) {
             .setTitle(`${oldEmbed.title || 'Party'} [${t('common.closed', lang)}]`)
             .setColor('#808080')
             .setFields(newFields)
-            .setThumbnail(`attachment://${LOGO_NAME}`)
+            .setThumbnail(guildConfig?.embed_thumbnail_url || `attachment://${LOGO_NAME}`)
             .setFooter(null)
             .setTimestamp(null);
 
