@@ -9,7 +9,7 @@ const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
 const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect, handleSubscriptionModal } = require('./handlers/commandHandler');
 
-const { handleCreatePartyCommand } = require('./handlers/partikurHandler');
+const { handleCreatePartyCommand, handleTempCommand, handleTempPartySelect } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -183,6 +183,8 @@ client.on('interactionCreate', async interaction => {
                 await handleVoteCommand(interaction);
             } else if (interaction.commandName === 'createparty') {
                 await handleCreatePartyCommand(interaction);
+            } else if (interaction.commandName === 'temp') {
+                await handleTempCommand(interaction);
             } else if (interaction.commandName === 'closeparty') {
                 await handleClosePartyCommand(interaction);
             } else if (interaction.commandName === 'members') {
@@ -221,6 +223,8 @@ client.on('interactionCreate', async interaction => {
                 await handleSettingsLanguageSelect(interaction);
             } else if (interaction.customId.startsWith('sub_manage:')) {
                 await handleSubscriptionSelect(interaction);
+            } else if (interaction.customId === 'temp_party_select') {
+                await handleTempPartySelect(interaction);
             }
         } else if (interaction.isUserSelectMenu()) {
             if (interaction.customId.startsWith('add_member_user_select_')) {

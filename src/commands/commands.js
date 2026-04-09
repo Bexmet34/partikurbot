@@ -43,6 +43,9 @@ const commands = [
         .setName('settings')
         .setDescription('Configure guild-specific bot settings.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    new SlashCommandBuilder()
+        .setName('temp')
+        .setDescription('Create a party using ready-made templates.'),
 
     new SlashCommandBuilder()
         .setName('servers')
