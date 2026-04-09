@@ -10,6 +10,8 @@ const { t } = require('../services/i18n');
 const { EMPTY_SLOT } = require('../constants/constants');
 
 
+const { buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
+
 async function handlePartiModal(interaction) {
     if (interaction.customId.startsWith('parti_modal:')) {
         const type = interaction.customId.split(':')[1] || 'genel';
@@ -44,7 +46,6 @@ async function handlePartiModal(interaction) {
             .filter(r => r.length > 0);
 
         // CREATE PAYLOAD
-        const { buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
         const embed = createPartikurEmbed(header, rolesList, description, '', 0, interaction.guild, lang, userId, guildConfig?.embed_thumbnail_url);
         const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
         const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);

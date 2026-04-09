@@ -1,11 +1,14 @@
 const { MessageFlags, ActionRowBuilder, TextInputBuilder, TextInputStyle, ModalBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const { getActivePartyCount } = require('../services/partyManager');
+const { getActivePartyCount, setActiveParty } = require('../services/partyManager');
 const { isWhitelisted } = require('../services/whitelistManager');
 const { getGuildConfig } = require('../services/guildConfig');
 const { t } = require('../services/i18n');
 const config = require('../config/config');
 
 const { isSubscriptionActive } = require('../services/subscriptionService');
+const { createPartikurEmbed, buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
+const { createCustomPartyComponents } = require('../builders/componentBuilder');
+const db = require('../services/db');
 
 /**
  * Handles /createparty command
@@ -94,9 +97,33 @@ async function handleCreatePartyCommand(interaction) {
     await interaction.showModal(modal);
 }
 
+async function handleTempAutocomplete(interaction) {
+    const focusedValue = interaction.options.getFocused();
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    
+    // 0. Subscription Check (optional but good idea, wait, discord doesn't need it on autocomplete, just return templates)
+    const templatesStr = guildConfig?.party_templates;
+    let templates = [];
+    try {
+        if (templatesStr) templates = typeof templatesStr === 'string' ? JSON.parse(templatesStr) : templatesStr;
+    } catch(e) {}
+
+    // Safe fallback if templates is not an array somehow
+    if (!Array.isArray(templates)) templates = [];
+
+    const choices = templates.map((t, index) => ({
+        name: (t.name || t.header || `Template ${index + 1}`).substring(0, 100),
+        value: index.toString()
+    }));
+    
+    const filtered = choices.filter(choice => choice.name.toLowerCase().includes(focusedValue.toLowerCase())).slice(0, 25);
+    await interaction.respond(filtered);
+}
+
 async function handleTempCommand(interaction) {
     const guildConfig = await getGuildConfig(interaction.guildId);
     const lang = guildConfig?.language || 'tr';
+    const userId = interaction.user.id;
 
     // 0. Subscription Check
     const active = await isSubscriptionActive(interaction.guildId, interaction.guild.name, interaction.guild.ownerId);
@@ -107,56 +134,6 @@ async function handleTempCommand(interaction) {
             .setColor('#FF0000');
         return await interaction.reply({ embeds: [expiredEmbed], flags: [MessageFlags.Ephemeral] });
     }
-
-    const templatesStr = guildConfig?.party_templates;
-    let templates = [];
-    try {
-        if (templatesStr) templates = typeof templatesStr === 'string' ? JSON.parse(templatesStr) : templatesStr;
-    } catch(e) {}
-
-    if (!templates || templates.length === 0) {
-        return await interaction.reply({
-            content: lang === 'tr' ? '❌ Veritabanında hiçbir şablon bulunamadı. Lütfen web paneli üzerinden ekleyin.' : '❌ No templates found in the database. Please add them via the web panel.',
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
-    const { StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
-    const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId('temp_party_select')
-        .setPlaceholder(lang === 'tr' ? 'Bir parti şablonu seçin...' : 'Select a party template...')
-        .addOptions(templates.slice(0, 25).map((t, index) => {
-            return new StringSelectMenuOptionBuilder()
-                .setLabel(t.name || t.header?.substring(0, 50) || `Template ${index + 1}`)
-                .setDescription((t.description || '').substring(0, 100))
-                .setValue(index.toString());
-        }));
-
-    const row = new ActionRowBuilder().addComponents(selectMenu);
-    
-    await interaction.reply({
-        content: lang === 'tr' ? 'Lütfen kullanmak istediğiniz şablonu seçin:' : 'Please select the template you want to use:',
-        components: [row],
-        flags: [MessageFlags.Ephemeral]
-    });
-}
-
-function getTemplateByIndex(templatesStr, indexStr) {
-    try {
-        let templates = typeof templatesStr === 'string' ? JSON.parse(templatesStr) : templatesStr;
-        const i = parseInt(indexStr, 10);
-        return templates[i];
-    } catch(e) {
-        return null;
-    }
-}
-
-async function handleTempPartySelect(interaction) {
-    if (!interaction.isStringSelectMenu() || interaction.customId !== 'temp_party_select') return;
-    
-    const guildConfig = await getGuildConfig(interaction.guildId);
-    const lang = guildConfig?.language || 'tr';
-    const userId = interaction.user.id;
 
     // Check Limits
     const isOwner = userId === interaction.guild?.ownerId;
@@ -171,15 +148,17 @@ async function handleTempPartySelect(interaction) {
             ? `❌ **${t('party.limit_reached', lang)}**\n\n${t('party.limit_desc_whitelisted', lang)}`
             : `❌ **${t('party.already_active', lang)}**\n\n${t('party.limit_desc_normal', lang)}`;
 
-        return await interaction.update({
+        return await interaction.reply({
             content: errorMsg,
-            components: []
+            flags: [MessageFlags.Ephemeral]
         });
     }
 
-    const template = getTemplateByIndex(guildConfig?.party_templates, interaction.values[0]);
+    const templateIndex = interaction.options.getString('template');
+    const template = getTemplateByIndex(guildConfig?.party_templates, templateIndex);
+    
     if (!template) {
-        return await interaction.update({ content: '❌ Hata: Şablon bulunamadı!', components: [] });
+        return await interaction.reply({ content: '❌ Hata: Şablon bulunamadı!', flags: [MessageFlags.Ephemeral] });
     }
 
     const header = template.header || template.name || 'Parti';
@@ -194,16 +173,15 @@ async function handleTempPartySelect(interaction) {
         .filter(r => r.length > 0);
 
     if (rolesList.length === 0) {
-        return await interaction.update({ content: '❌ Bu şablonda hiç rol tanımlanmamış.', components: [] });
+        return await interaction.reply({ content: '❌ Bu şablonda hiç rol tanımlanmamış.', flags: [MessageFlags.Ephemeral] });
     }
 
-    await interaction.update({ content: '⏳ Şablon yükleniyor...', components: [] });
+    // Defer reply instead of replying immediately so we can create the party message and reference it if we want to confirm ephemeral, 
+    // Wait, the regular /createparty responds an ephemeral wait then creates a real message. Actually /createparty opens modal, then modal completes.
+    // Let's send the actual party into the channel directly, and reply ephemeral with success.
+    await interaction.reply({ content: '⏳ Şablon yükleniyor ve parti oluşturuluyor...', flags: [MessageFlags.Ephemeral] });
 
     // Use shared creation logic
-    const { createPartikurEmbed, buildRolesFields, addFooterFields } = require('../builders/embedBuilder');
-    const { createCustomPartyComponents } = require('../builders/componentBuilder');
-    const db = require('../services/db');
-
     const embed = createPartikurEmbed(header, rolesList, description, '', 0, interaction.guild, lang, userId, guildConfig?.embed_thumbnail_url);
     const rolesWithMembers = rolesList.map(role => ({ role, userId: null }));
     const components = createCustomPartyComponents(rolesList, userId, lang, rolesWithMembers);
@@ -213,8 +191,6 @@ async function handleTempPartySelect(interaction) {
     const actualRoles = rolesList.filter(r => !r.startsWith('#HEADER:') && !r.startsWith('#'));
     addFooterFields(embed, 0, actualRoles.length, lang);
 
-    const { safeReply } = require('../utils/interactionUtils');
-    // Safe reply as new message in the channel since update edit ephemeral
     const msg = await interaction.channel.send({ content: '@everyone', embeds: [embed], components: components });
 
     const msgId = msg?.id;
@@ -240,12 +216,14 @@ async function handleTempPartySelect(interaction) {
             console.error('[PartikurHandler] DB Error:', err.message);
         }
         
-        await interaction.followUp({ content: '✅ Başarıyla oluşturuldu!', flags: [MessageFlags.Ephemeral] }).catch(()=>{});
+        await interaction.editReply({ content: '✅ Başarıyla oluşturuldu!' }).catch(()=>{});
+    } else {
+         await interaction.editReply({ content: '❌ Parti oluşturulamadı (Mesaj gönderilemedi)!' }).catch(()=>{});
     }
 }
 
 module.exports = {
     handleCreatePartyCommand,
     handleTempCommand,
-    handleTempPartySelect
+    handleTempAutocomplete
 };

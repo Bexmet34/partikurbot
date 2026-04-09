@@ -45,7 +45,13 @@ const commands = [
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
     new SlashCommandBuilder()
         .setName('temp')
-        .setDescription('Create a party using ready-made templates.'),
+        .setDescription('Create a party using ready-made templates.')
+        .addStringOption(option => 
+            option.setName('template')
+                .setDescription('Select the template you want to use')
+                .setRequired(true)
+                .setAutocomplete(true)
+        ),
 
     new SlashCommandBuilder()
         .setName('servers')

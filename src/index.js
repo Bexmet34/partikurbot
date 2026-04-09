@@ -9,7 +9,7 @@ const path = require('path');
 const { registerCommands } = require('./services/commandRegistration');
 const { handleHelpCommand, handleVoteCommand, handleClosePartyCommand, handleMembersCommand, handleStatsCommand, handleWhitelistAddCommand, handleWhitelistRemoveCommand, handleSettingsCommand, handleServersCommand, handleSubscriptionCommand, handleSubscriptionSelect, handleSubscriptionModal } = require('./handlers/commandHandler');
 
-const { handleCreatePartyCommand, handleTempCommand, handleTempPartySelect } = require('./handlers/partikurHandler');
+const { handleCreatePartyCommand, handleTempCommand, handleTempAutocomplete } = require('./handlers/partikurHandler');
 
 const { handlePartyButtons } = require('./handlers/buttonHandler');
 const { handlePartiModal } = require('./handlers/modalHandler');
@@ -176,7 +176,11 @@ client.on('guildCreate', async (guild) => {
 
 client.on('interactionCreate', async interaction => {
     try {
-        if (interaction.isChatInputCommand()) {
+        if (interaction.isAutocomplete()) {
+            if (interaction.commandName === 'temp') {
+                await handleTempAutocomplete(interaction);
+            }
+        } else if (interaction.isChatInputCommand()) {
             if (interaction.commandName === 'help') {
                 await handleHelpCommand(interaction);
             } else if (interaction.commandName === 'vote') {
@@ -223,8 +227,6 @@ client.on('interactionCreate', async interaction => {
                 await handleSettingsLanguageSelect(interaction);
             } else if (interaction.customId.startsWith('sub_manage:')) {
                 await handleSubscriptionSelect(interaction);
-            } else if (interaction.customId === 'temp_party_select') {
-                await handleTempPartySelect(interaction);
             }
         } else if (interaction.isUserSelectMenu()) {
             if (interaction.customId.startsWith('add_member_user_select_')) {
