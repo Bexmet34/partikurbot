@@ -55,13 +55,26 @@ function startBroadcastWorker(client) {
 
             try {
                 // 3. Dinamik içerik değişimi: {sunucu} -> sunucu_adi
-                const finalMessage = msg.message_content.replace(/{sunucu}/g, guildName);
+                const finalMessageStr = msg.message_content.replace(/{sunucu}/g, guildName);
 
-                // 4. Discord üzerinden mesajı gönder
+                // 4. İçeriğin JSON (Embed) olup olmadığını kontrol et
+                let sendOptions;
+                try {
+                    if (finalMessageStr.trim().startsWith('{')) {
+                        sendOptions = JSON.parse(finalMessageStr);
+                    } else {
+                        sendOptions = { content: finalMessageStr };
+                    }
+                } catch (e) {
+                    // JSON hatası varsa düz metin olarak gönder
+                    sendOptions = { content: finalMessageStr };
+                }
+
+                // 5. Discord üzerinden mesajı gönder
                 const user = await client.users.fetch(ownerId);
                 if (!user) throw new Error('Kullanıcı bulunamadı.');
 
-                await user.send(finalMessage);
+                await user.send(sendOptions);
                 
                 // 5. Başarılı olursa durumu 'completed' yap
                 await supabase.from('message_queue')
