@@ -83,6 +83,74 @@ function startCronService(client) {
             console.error('[CronService] Error:', err.message);
         }
     });
+
+    // --- Nightly Server Cleanup (02:00 UTC) ---
+    cron.schedule('0 2 * * *', async () => {
+        console.log('[CronService] Nightly server cleanup running (02:00 UTC)...');
+        await performServerCleanup(client, 'Otomatik Gece Taraması');
+    }, { timezone: "UTC" });
 }
 
-module.exports = { startCronService };
+/**
+ * Performs server cleanup by comparing database with active guilds.
+ * @param {import('discord.js').Client} client 
+ * @param {string} source Reason for cleanup (Auto/Manual)
+ */
+async function performServerCleanup(client, source = 'Sistem') {
+    try {
+        const BOT_OWNER_ID = '407234961582587916';
+        
+        // 1. Fetch all subscriptions
+        const { data: subs, error } = await supabase
+            .from('subscriptions')
+            .select('guild_id, guild_name');
+
+        if (error) throw error;
+
+        const deletedServers = [];
+
+        // 2. Check each server
+        for (const sub of subs) {
+            if (!client.guilds.cache.has(sub.guild_id)) {
+                // Bot is not in this server, delete it
+                const { error: delError } = await supabase
+                    .from('subscriptions')
+                    .delete()
+                    .eq('guild_id', sub.guild_id);
+
+                if (!delError) {
+                    deletedServers.push(`${sub.guild_name} (\`${sub.guild_id}\`)`);
+                }
+            }
+        }
+
+        // 3. Notify Owner
+        if (deletedServers.length > 0) {
+            try {
+                const owner = await client.users.fetch(BOT_OWNER_ID);
+                if (owner) {
+                    const embed = new EmbedBuilder()
+                        .setTitle('🧹 Sunucu Temizliği Tamamlandı')
+                        .setDescription(`Botun artık bulunmadığı sunucular veritabanından başarıyla temizlendi.\n\n**Kaynak:** \`${source}\``)
+                        .addFields({ 
+                            name: `Silinen Sunucular (${deletedServers.length})`, 
+                            value: deletedServers.join('\n').substring(0, 1024) 
+                        })
+                        .setColor('#F1C40F')
+                        .setTimestamp();
+
+                    await owner.send({ embeds: [embed] });
+                }
+            } catch (err) {
+                console.error('[Cleanup] Owner notification failed:', err.message);
+            }
+        } else {
+            console.log(`[Cleanup] ${source}: Herhangi bir geçersiz sunucu bulunamadı.`);
+        }
+
+    } catch (err) {
+        console.error(`[Cleanup] Error during ${source}:`, err.message);
+    }
+}
+
+module.exports = { startCronService, performServerCleanup };

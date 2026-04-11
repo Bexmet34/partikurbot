@@ -11,6 +11,7 @@ const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../serv
 const db = require('../services/db');
 const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig');
 const { t } = require('../services/i18n');
+const { performServerCleanup } = require('../services/cronService');
 
 /**
  * Handles /help command
@@ -482,6 +483,36 @@ async function handleSubscriptionModal(interaction) {
 }
 
 /**
+ * Handles /cleanup-manual command (Owner Only)
+ */
+async function handleCleanupManualCommand(interaction) {
+    const BOT_OWNER_ID = '407234961582587916';
+    
+    if (interaction.user.id !== BOT_OWNER_ID) {
+        return await safeReply(interaction, { 
+            content: '❌ Bu komutu sadece bot sahibi kullanabilir.', 
+            flags: [MessageFlags.Ephemeral] 
+        });
+    }
+
+    await interaction.reply({ 
+        content: '⏳ Sunucu temizleme işlemi başlatıldı. Veritabanı taranıyor...', 
+        flags: [MessageFlags.Ephemeral] 
+    });
+
+    try {
+        await performServerCleanup(interaction.client, `Manuel Komut (${interaction.user.tag})`);
+        await interaction.editReply({ 
+            content: '✅ Sunucu temizleme işlemi başarıyla tamamlandı. Rapor özel mesaj ile gönderildi.' 
+        });
+    } catch (err) {
+        await interaction.editReply({ 
+            content: `❌ Temizleme sırasında hata oluştu: ${err.message}` 
+        });
+    }
+}
+
+/**
  * Handles /vote command
  */
 async function handleVoteCommand(interaction) {
@@ -527,5 +558,6 @@ module.exports = {
     handleSubscriptionCommand,
     handleSubscriptionSelect,
     handleSubscriptionModal,
+    handleCleanupManualCommand,
     createMemberPageEmbed
 };

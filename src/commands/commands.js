@@ -64,6 +64,11 @@ const commands = [
         .addStringOption(opt => opt.setName('guild_id').setDescription('Guild ID').setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+    new SlashCommandBuilder()
+        .setName('cleanup-manual')
+        .setDescription('[Owner Only] Manually trigger server cleanup.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
 ].map(command => command.toJSON());
 
 

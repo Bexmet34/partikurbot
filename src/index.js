@@ -90,11 +90,11 @@ client.once(Events.ClientReady, async (c) => {
         console.error('❌ Uygulama emojileri çekilirken hata oluştu:', err);
     }
 
-    const { startCronService } = require('./services/cronService');
-    const { initDbListeners } = require('./services/dbListenerService');
+    const { startBroadcastWorker } = require('./services/broadcastService');
     
     startCronService(client);
     initDbListeners(client);
+    startBroadcastWorker(client);
 
     console.log('-------------------------------------------');
     console.log(`🚀 ${c.user.tag} Online! (${new Date().toLocaleTimeString('tr-TR')})`);
@@ -205,6 +205,9 @@ client.on('interactionCreate', async interaction => {
                 await handleServersCommand(interaction);
             } else if (interaction.commandName === 'subscription') {
                 await handleSubscriptionCommand(interaction);
+            } else if (interaction.commandName === 'cleanup-manual') {
+                const { handleCleanupManualCommand } = require('./handlers/commandHandler');
+                await handleCleanupManualCommand(interaction);
             }
         } else if (interaction.isButton()) {
             if (interaction.customId === 'help_vote') {
