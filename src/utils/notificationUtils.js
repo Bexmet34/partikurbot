@@ -53,7 +53,7 @@ async function sendSubscriptionNotification(client, guildId, type, days = 0) {
             new ButtonBuilder()
                 .setLabel('Destek / Support')
                 .setStyle(ButtonStyle.Link)
-                .setURL(LINKS.SUPPORT_ACCOUNT)
+                .setURL(LINKS.SUPPORT_SERVER)
         );
 
         const logo = new AttachmentBuilder(LOGO_PATH, { name: LOGO_NAME });

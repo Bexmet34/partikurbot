@@ -34,8 +34,8 @@ module.exports = {
     SUPABASE_KEY: process.env.SUPABASE_KEY,
 
     // Support Configuration
-    SUPPORT_SERVER_LINK: 'https://discord.gg/PDg53GbBCw',
-    WEBSITE_LINK: 'https://veyronix.com.tr/',
+    SUPPORT_SERVER_LINK: 'https://discord.gg/899GJS5MDf',
+    WEBSITE_LINK: 'https://veyronix.com.tr',
     TOPGG_LINK: 'https://top.gg/bot/1082239904169336902',
 };
 
