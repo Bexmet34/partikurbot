@@ -90,6 +90,8 @@ client.once(Events.ClientReady, async (c) => {
         console.error('❌ Uygulama emojileri çekilirken hata oluştu:', err);
     }
 
+    const { startCronService } = require('./services/cronService');
+    const { initDbListeners } = require('./services/dbListenerService');
     const { startBroadcastWorker } = require('./services/broadcastService');
     
     startCronService(client);
