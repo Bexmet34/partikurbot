@@ -61,8 +61,8 @@ async function handleClaimRewardButton(interaction) {
 async function handleRewardGuildSelect(interaction) {
     const userId = interaction.user.id;
     const guildId = interaction.values[0];
-    const guild = ownedGuilds = await getUserOwnedGuilds(userId);
-    const selectedGuild = guild.find(g => g.guild_id === guildId);
+    const ownedGuilds = await getUserOwnedGuilds(userId);
+    const selectedGuild = ownedGuilds.find(g => g.guild_id === guildId);
     
     if (!selectedGuild) {
         return await interaction.reply({ content: '❌ Sunucu bulunamadı.', flags: [MessageFlags.Ephemeral] });

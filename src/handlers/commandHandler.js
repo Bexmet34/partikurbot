@@ -573,5 +573,6 @@ module.exports = {
     handleSubscriptionSelect,
     handleSubscriptionModal,
     handleCleanupManualCommand,
+    handleSetupRewardCommand,
     createMemberPageEmbed
 };
