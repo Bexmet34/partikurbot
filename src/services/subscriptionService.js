@@ -163,11 +163,63 @@ async function setSubscriptionActive(guildId, value = true) {
     return !error;
 }
 
+/**
+ * Gets all guilds owned by a user
+ * @param {string} userId 
+ */
+async function getUserOwnedGuilds(userId) {
+    const { data, error } = await supabase
+        .from('subscriptions')
+        .select('guild_id, guild_name')
+        .eq('owner_id', userId);
+    
+    if (error) {
+        console.error('[SubscriptionService] GetOwnedGuilds Error:', error.message);
+        return [];
+    }
+    return data || [];
+}
+
+/**
+ * Checks if user has already received the support reward
+ * @param {string} userId 
+ */
+async function hasUserReceivedReward(userId) {
+    const { data, error } = await supabase
+        .from('support_rewards')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single();
+    
+    if (error && error.code !== 'PGRST116') {
+        console.error('[SubscriptionService] HasReceivedReward Error:', error.message);
+    }
+    return !!data;
+}
+
+/**
+ * Claims support reward for a user and guild
+ */
+async function claimSupportReward(userId, guildId) {
+    // 1. Mark as awarded
+    const { error: rewardError } = await supabase
+        .from('support_rewards')
+        .insert([{ user_id: userId, guild_id: guildId }]);
+    
+    if (rewardError) return false;
+
+    // 2. Add 30 days
+    return await addSubscriptionDays(guildId, 30);
+}
+
 module.exports = {
     getSubscription,
     isSubscriptionActive,
     addSubscriptionDays,
     removeSubscriptionDays,
     setUnlimitedSubscription,
-    setSubscriptionActive
+    setSubscriptionActive,
+    getUserOwnedGuilds,
+    hasUserReceivedReward,
+    claimSupportReward
 };

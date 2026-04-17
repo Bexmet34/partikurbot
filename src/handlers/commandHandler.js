@@ -1,6 +1,6 @@
 const { MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const { DEFAULT_CONTENT, LOGO_NAME, LINKS } = require('../constants/constants');
-const { sendSubscriptionNotification } = require('../utils/notificationUtils');
+const { sendSubscriptionNotification, logPublicTransaction } = require('../utils/notificationUtils');
 const config = require('../config/config');
 const { createHelpEmbed } = require('../builders/embedBuilder');
 const { safeReply } = require('../utils/interactionUtils');
@@ -10,6 +10,7 @@ const { createClosedButton } = require('../builders/componentBuilder');
 const { getEuropeGuildMembers, searchPlayer, getPlayerStats } = require('../services/albionApiService');
 const db = require('../services/db');
 const { getGuildConfig, updateGuildConfig } = require('../services/guildConfig');
+const { handleSetupRewardCommand } = require('./rewardHandler');
 const { t } = require('../services/i18n');
 const { performServerCleanup } = require('../services/cronService');
 
@@ -445,6 +446,14 @@ async function handleSubscriptionSelect(interaction) {
 
     if (success) {
         const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+        
+        // Log transaction
+        let detail = '';
+        if (action === 'toggle_unlimited') detail = updatedSub.is_unlimited ? '♾️ Sınırsız mod açıldı.' : '🚫 Sınırsız mod kapatıldı.';
+        else if (action === 'toggle_active') detail = updatedSub.is_active ? '✅ Abonelik aktifleştirildi.' : '🚫 Abonelik donduruldu.';
+
+        await logPublicTransaction(interaction.client, interaction.user.id, guildId, updatedSub.guild_name, 'admin_action', detail);
+
         await interaction.update({
             embeds: [createSubscriptionEmbed(updatedSub)],
             components: [createSubscriptionMenu(guildId, updatedSub)],
@@ -474,6 +483,11 @@ async function handleSubscriptionModal(interaction) {
 
     if (success) {
         const updatedSub = await getSubscription(guildId, 'Sistem', interaction.user.id);
+
+        // Log transaction
+        const detail = action === 'add_custom' ? `➕ ${days} gün eklendi.` : `➖ ${days} gün çıkarıldı.`;
+        await logPublicTransaction(interaction.client, interaction.user.id, guildId, updatedSub.guild_name, 'admin_action', detail);
+
         await interaction.update({
             embeds: [createSubscriptionEmbed(updatedSub)],
             components: [createSubscriptionMenu(guildId, updatedSub)],

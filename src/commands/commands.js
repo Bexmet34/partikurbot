@@ -68,6 +68,11 @@ const commands = [
         .setName('cleanup-manual')
         .setDescription('[Owner Only] Manually trigger server cleanup.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    
+    new SlashCommandBuilder()
+        .setName('setup-reward')
+        .setDescription('[Owner Only] Send the reward claim message to this channel.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 ].map(command => command.toJSON());
 

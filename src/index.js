@@ -16,6 +16,7 @@ const { handlePartiModal } = require('./handlers/modalHandler');
 const { AutoPoster } = require('topgg-autoposter');
 const { handleManageMenu, handleEditModal, handleKickMember, handleJoinRoleSelect, handleJoinMultiRoleSelect, handleAddMemberSelect, handleAddMemberUserSelect } = require('./handlers/menuHandler');
 const { handleSettingsLanguageSelect } = require('./handlers/settingsHandler');
+const { handleClaimRewardButton, handleRewardGuildSelect } = require('./handlers/rewardHandler');
 const { handleInteractionError } = require('./utils/interactionUtils');
 const { initDb } = require('./services/db');
 const { getGuildConfig } = require('./services/guildConfig');
@@ -210,10 +211,15 @@ client.on('interactionCreate', async interaction => {
             } else if (interaction.commandName === 'cleanup-manual') {
                 const { handleCleanupManualCommand } = require('./handlers/commandHandler');
                 await handleCleanupManualCommand(interaction);
+            } else if (interaction.commandName === 'setup-reward') {
+                const { handleSetupRewardCommand } = require('./handlers/commandHandler');
+                await handleSetupRewardCommand(interaction);
             }
         } else if (interaction.isButton()) {
             if (interaction.customId === 'help_vote') {
                 await handleVoteCommand(interaction);
+            } else if (interaction.customId === 'sub_claim_reward') {
+                await handleClaimRewardButton(interaction);
             } else {
                 await handlePartyButtons(interaction);
             }
@@ -232,6 +238,8 @@ client.on('interactionCreate', async interaction => {
                 await handleSettingsLanguageSelect(interaction);
             } else if (interaction.customId.startsWith('sub_manage:')) {
                 await handleSubscriptionSelect(interaction);
+            } else if (interaction.customId === 'sub_reward_guild_select') {
+                await handleRewardGuildSelect(interaction);
             }
         } else if (interaction.isUserSelectMenu()) {
             if (interaction.customId.startsWith('add_member_user_select_')) {
